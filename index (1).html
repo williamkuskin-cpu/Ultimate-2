@@ -1,0 +1,1478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ultimate²</title>
+<meta name="description" content="Tic-tac-toe in tic-tac-toe in tic-tac-toe.">
+<meta property="og:title" content="Ultimate²">
+<meta property="og:description" content="Tic-tac-toe in tic-tac-toe. Your move!">
+<meta name="theme-color" content="#f2f6f8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ultimate²">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-512.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Kalam:wght@400;700&display=swap">
+<style>
+:root{
+  --paper:#f2f6f8; --paper-2:#e6eef2; --grid:#c4d6e0; --grid-strong:#7f97a6; --ink:#1d2932; --muted:#5b6b76;
+  --x:#c63d2b; --o:#2453b3; --hl:#ffe45c; --hl-soft:rgba(255,228,92,.45); --veil:rgba(242,246,248,.74);
+  --btn:#1d2932; --btn-fg:#f2f6f8;
+  --f-display:"Kalam","Comic Sans MS","Segoe Print",cursive;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --paper:#111a21; --paper-2:#18242d; --grid:#263845; --grid-strong:#5d7686; --ink:#e2eaef; --muted:#93a5b1;
+  --x:#ff7b64; --o:#7ea8ff; --hl:#7a6a10; --hl-soft:rgba(255,228,92,.18); --veil:rgba(17,26,33,.76);
+  --btn:#e2eaef; --btn-fg:#111a21; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  background-image:linear-gradient(var(--paper-2) 1px,transparent 1px),linear-gradient(90deg,var(--paper-2) 1px,transparent 1px);
+  background-size:22px 22px;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#app{max-width:720px;margin:0 auto;padding-block:16px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2{font-family:var(--f-display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.4rem,9vw,3.6rem)}
+h1 sup,.sq{font-size:.55em;color:var(--x);vertical-align:.8em;margin-left:.04em}
+h2{font-size:1.45rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:2px solid var(--btn);background:var(--btn);color:var(--btn-fg);border-radius:10px;padding:10px 16px;font-weight:700;text-decoration:none;display:inline-block;position:relative}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{padding:6px 12px;font-size:.9rem}
+.btn:disabled{opacity:.45;cursor:default}
+.badge{position:absolute;top:-8px;right:-8px;background:var(--x);color:#fff;border-radius:999px;font-size:.72rem;min-width:20px;height:20px;display:grid;place-items:center;padding:0 5px}
+.btn:focus-visible,.cell:focus-visible,.nav button:focus-visible,input:focus-visible,.gamerow:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+.card{background:var(--paper);border:1.5px solid var(--grid-strong);border-radius:12px;padding:16px}
+.label{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.banner{border-left:5px solid var(--hl);background:var(--paper-2);padding:10px 14px;border-radius:6px}
+.err{color:var(--x);font-weight:700}
+details summary{cursor:pointer;font-weight:700}
+ol.rules,ul.rules{margin:10px 0 0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:62ch}
+label.f{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.92rem}
+input[type=text],input[type=password],input[type=tel],input.link{font:inherit;font-weight:400;padding:10px 12px;border:1.5px solid var(--grid-strong);border-radius:8px;background:var(--paper-2);color:var(--ink);width:100%}
+form{display:flex;flex-direction:column;gap:12px;max-width:420px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.players{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-weight:700}
+.pl{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1.5px solid transparent}
+.pl.turn{border-color:var(--ink)}
+.pl svg{width:20px;height:20px}
+.status{font-family:var(--f-display);font-size:1.45rem;line-height:1.2}
+.where{font-size:.95rem}
+.vname{font-weight:700}
+
+/* picker */
+.choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--grid-strong);border-radius:10px;padding:10px 12px;cursor:pointer;background:var(--paper)}
+.opt:has(input:checked){border-color:var(--ink);background:var(--paper-2);box-shadow:inset 0 0 0 1px var(--ink)}
+.opt input{margin-top:4px;accent-color:var(--ink);width:18px;height:18px;flex:none}
+.opt b{display:block}
+.opt span{font-size:.88rem;color:var(--muted)}
+@media (max-width:420px){.choice{grid-template-columns:minmax(0,1fr)}}
+
+/* game list */
+.gamelist{display:flex;flex-direction:column;gap:8px}
+.gamerow{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;width:100%;
+  background:var(--paper);border:1.5px solid var(--grid-strong);border-radius:10px;padding:10px 14px}
+.gamerow.cur{border-color:var(--ink);border-width:2.5px}
+.gamerow .meta{min-width:0}
+.gamerow .meta b{display:block}
+.pill{font-size:.8rem;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;border:1.5px solid var(--grid-strong)}
+.pill.go{background:var(--hl);border-color:var(--hl)}
+.empty{border:1.5px dashed var(--grid-strong);border-radius:10px;padding:14px;color:var(--muted)}
+
+/* boards: any depth; .lv-top holds boards, .lv-low holds squares */
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));position:relative;min-width:0;min-height:0}
+.board.root{width:min(100%,640px);aspect-ratio:1;border:3px solid var(--ink);border-radius:5px;background:var(--ink);gap:4px}
+.board.root.small-root{width:min(100%,520px);border-width:4px}
+.lv-mid{gap:2px;background:var(--grid-strong)}
+.lv-low{gap:1px;background:var(--grid)}
+.small-root>.lv-low,.small-root>.slot>.lv-low{gap:1.5px}
+.slot{display:grid;background:var(--paper);min-width:0;min-height:0;position:relative}
+.slot>.board{transform:rotate(45deg) scale(.7071)}
+.zoomwrap{width:min(100%,520px);aspect-ratio:1;display:grid}
+.zoomwrap>.slot{background:transparent}
+.zoomwrap.big{width:min(100%,640px)}
+.cell{border:0;padding:0;margin:0;width:100%;height:100%;background:var(--paper);display:grid;place-items:center;min-width:0;min-height:0;position:relative;touch-action:manipulation}
+.cell:not(.legal){cursor:default}
+.cell svg{width:78%;height:78%}
+.cell.can{background:var(--hl)}
+.free .cell.can{background:var(--hl-soft)}
+.cell.legal:hover{background:var(--hl)}
+.cell.sel{background:var(--hl)!important;box-shadow:inset 0 0 0 2px var(--ink)}
+.cell.sel svg{opacity:.55}
+.cell.last::after{content:"";position:absolute;inset:1px;border:2px solid var(--ink);border-radius:3px;opacity:.6}
+.root.big-root .cell.last::after{inset:0;border-width:1.5px;border-radius:1px}
+.mk{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.mk.x{stroke:var(--x)} .mk.o{stroke:var(--o)}
+.fresh .mk{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .45s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.fresh .mk{animation:none;stroke-dashoffset:0}}
+.over{position:absolute;inset:0;display:grid;place-items:center;background:var(--veil);pointer-events:none;z-index:1}
+.over svg{width:84%;height:84%}
+.over.tie span{font-family:var(--f-display);font-weight:700;color:var(--muted);font-size:.9rem}
+.boardbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.nav{display:grid;grid-template-columns:repeat(3,30px);gap:3px}
+.nav button{width:30px;height:30px;border:1.5px solid var(--grid-strong);background:var(--paper);border-radius:5px;padding:0;display:grid;place-items:center;font-size:.7rem;font-weight:700}
+.nav button svg{width:70%;height:70%}
+.nav button.req{background:var(--hl)}
+.nav button.cur{border-color:var(--ink);border-width:2.5px}
+.confirm{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-height:48px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;margin-right:5px;border:1px solid var(--grid-strong)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--btn);color:var(--btn-fg);
+  padding:10px 16px;border-radius:10px;font-weight:700;max-width:calc(100% - 32px);z-index:20}
+[hidden]{display:none!important}
+/* round 1: profiles, friends, invites */
+.av{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;display:inline-grid;place-items:center;font-weight:700;font-size:.8rem;color:#fff;overflow:hidden;line-height:1}
+.av.sm{width:22px;height:22px;font-size:.7rem}
+.av.lg{width:84px;height:84px;font-size:2rem}
+.pl .av{width:24px;height:24px}
+.avbtn{border:0;background:none;padding:0;border-radius:50%;cursor:pointer;display:inline-grid}
+.gamerow .left{display:flex;gap:10px;align-items:center;min-width:0}
+.friendrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--grid)}
+.friendrow:last-child{border-bottom:0}
+.friendrow .left{display:flex;gap:10px;align-items:center;min-width:0;font-weight:700}
+select{font:inherit;padding:9px 10px;border:1.5px solid var(--grid-strong);border-radius:8px;background:var(--paper-2);color:var(--ink);max-width:100%}
+.invite-card{border-color:var(--ink);border-width:2.5px}
+.profile-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+/* round 2-3 */
+:root{--s:#2f8f4e}
+@media (prefers-color-scheme: dark){:root{--s:#6fd38e}}
+.mk.s{stroke:var(--s)}
+.mk.a{fill:var(--ink);font-family:var(--f-body);font-weight:700}
+.players{padding-top:6px}
+.pl{position:relative}
+.bubble{position:absolute;bottom:calc(100% + 6px);left:0;max-width:220px;width:max-content;background:var(--paper-2);border:1.5px solid var(--grid-strong);border-radius:12px;padding:4px 10px;font-weight:400;font-size:.85rem;z-index:3;overflow-wrap:anywhere}
+.bubble::after{content:"";position:absolute;top:100%;left:16px;border:6px solid transparent;border-top-color:var(--grid-strong)}
+.players.has-bubble{padding-top:46px}
+.chatpanel{display:flex;flex-direction:column;gap:10px}
+.chatlog{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px}
+.msg{display:flex;gap:8px;align-items:flex-start;max-width:90%}
+.msg.mine{align-self:flex-end;flex-direction:row-reverse}
+.msg .txt{background:var(--paper-2);border:1px solid var(--grid);border-radius:12px;padding:6px 10px;overflow-wrap:anywhere}
+.msg.mine .txt{background:var(--hl-soft)}
+.msg .who{font-size:.75rem;color:var(--muted)}
+#chatform{flex-direction:row;max-width:none;gap:8px}
+#chatform input{flex:1;min-width:0}
+.dotnew{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--x);margin-left:6px;vertical-align:1px}
+/* 3D */
+.layers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:min(100%,560px)}
+.layer .label{display:block;margin-bottom:4px}
+.grid4,.grid5{display:grid;gap:2px;background:var(--ink);border:3px solid var(--ink);border-radius:5px;aspect-ratio:1}
+.grid4{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr))}
+.grid5{grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(5,minmax(0,1fr));width:min(100%,460px)}
+.cell.win{background:var(--hl)!important;box-shadow:inset 0 0 0 3px var(--ink)}
+.cell .wild{font-weight:700;font-size:1.4rem;color:var(--ink)}
+/* infinite */
+.infwrap{width:min(100%,560px);display:flex;flex-direction:column;gap:8px}
+#infsvg{width:100%;aspect-ratio:1;background:var(--paper-2);border:3px solid var(--ink);border-radius:6px;touch-action:none;user-select:none;-webkit-user-select:none;display:block}
+/* winning lines */
+.wline{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
+.wline line{stroke-linecap:round}
+.over.faint{background:transparent}
+.over.faint svg{opacity:.5}
+/* replay + pictures */
+.replaybar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.replaybar input[type=range]{flex:1;min-width:140px;accent-color:var(--ink)}
+.preview img{max-width:100%;border:1.5px solid var(--grid-strong);border-radius:8px;display:block}
+/* history */
+table.stats{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+table.stats th,table.stats td{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:left}
+table.stats td.n,table.stats th.n{text-align:right;width:3.2em}
+.tablewrap{overflow-x:auto}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg .opt{padding:8px 12px}
+.opt.disabled{opacity:.45}
+</style>
+</head>
+<body>
+<div id="app"><p class="muted">Loading…</p></div>
+<div class="toast" id="toast" hidden></div>
+
+<!-- Supabase (free database with live updates), pinned version -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// Your Supabase project's address and public key. Both are designed to be public;
+// the database's own checks (setup.sql / update.sql) are what protect the game.
+window.U2_SUPABASE = { url: "https://vhvfcmzxqyaivlpkoouc.supabase.co", key: "sb_publishable_cKcB2XwIoyFkBlLoLk38OA_5jYMAP_u" };
+</script>
+
+<script>
+/*ENGINE-START*/
+/* Game types: "u1" Ultimate (81 squares) / "u2" Ultimate² (729) with optional "t" Tilt and "z" Zip-Zap-Zo;
+   "c3" 3D (4x4x4, four in a row); "inf" Infinite (five or more in a row, no edges); "t3" Trifectacto (3 players).
+   Symbols: 1 = X, 2 = O, 3 = Squiggle, 4 = the wild A square in Trifectacto. */
+const POS=["top-left","top","top-right","left","center","right","bottom-left","bottom","bottom-right"];
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const RING=[0,1,2,5,8,7,6,3]; // the 8 outer spots, clockwise; one step = a 45° twist
+const rotPos=(k,r)=>{if(k===4)return 4;const i=RING.indexOf(k);return RING[(((i+r)%8)+8)%8]};
+const shiftPos=(k,d)=>{const r=Math.floor(k/3),c=k%3,dr=Math.floor(d/3)-1,dc=d%3-1;return((r+dr+3)%3)*3+((c+dc+3)%3)};
+const ALL_TYPES=["u1","u1t","u1z","u1tz","u2","u2t","u2z","u2tz","u3","u3t","u3z","u3tz","c3","inf","t3"];
+const kindOf=v=>v==="c3"?"C3":v==="inf"?"INF":v==="t3"?"T3":"U";
+function parseV(v){v=(typeof v==="string"&&/^u[123]t?z?$/.test(v))?v:"u2";return{v,L:+v[1]+1,tilt:v.includes("t"),zip:v.includes("z")}}
+function variantName(v){
+  if(v==="c3")return"3D";if(v==="inf")return"Infinite";if(v==="t3")return"Trifectacto";
+  const o=parseV(v);return[o.tilt?"Tilt":"",o.zip?"Zip-Zap-Zo":"",o.L===4?"Ultimate³":o.L===3?"Ultimate²":"Ultimate"].filter(Boolean).join(" ");
+}
+const symsOf=v=>v==="t3"?[1,2,3]:[1,2];
+const SYMNAME={1:"X",2:"O",3:"Squiggle",4:"A"};
+const T3ORDER=[1,3,2]; // X, then Squiggle, then O
+function turnSym(v,first,n){first=first||1;if(v==="t3"){const i=T3ORDER.indexOf(first);return T3ORDER[(i+n)%3]}return n%2===0?first:3-first}
+const stepOf=v=>v==="inf"?4:/^u3/.test(v)?3:2;
+const enc2=i=>i.toString(36).padStart(2,"0");
+const encMove=(v,m)=>v==="inf"?enc2(m[0]+648)+enc2(m[1]+648):/^u3/.test(v)?m.toString(36).padStart(3,"0"):enc2(m);
+function decMoves(v,s){s=s||"";const step=stepOf(v),o=[];for(let k=0;k+step<=s.length;k+=step){
+  if(step===2||step===3)o.push(parseInt(s.slice(k,k+step),36));else o.push([parseInt(s.slice(k,k+2),36)-648,parseInt(s.slice(k+2,k+4),36)-648])}return o}
+function hasLine(v,p,wild){return LINES.some(l=>l.every(k=>v[k]===p||(wild&&v[k]===3)))}
+function lineOf(v,p,wild){return LINES.find(l=>l.every(k=>v[k]===p||(wild&&v[k]===3)))||null}
+
+/* ---------- Ultimate / Ultimate² ---------- */
+function rotOf(V,prefix){if(!V.tilt)return 0;let r=0;for(const k of prefix)if(k===4)r++;return r}
+const visPos=(V,prefix,k)=>rotPos(k,rotOf(V,prefix));
+const idxAt=(V,prefix,vis)=>rotPos(vis,-rotOf(V,prefix));
+function pathOf(i,L){const p=[];for(let d=L-1;d>=0;d--){p[d]=i%9;i=Math.floor(i/9)}return p}
+function idOf(p,len){let id=0;for(let d=0;d<len;d++)id=id*9+p[d];return id}
+function freshU(V,first){const R=[];for(let d=0;d<=V.L;d++)R.push(new Array(9**d).fill(0));return{kind:"U",V,R,target:[],last:-1,n:0,big:0,first:first||1}}
+function legalU(st,i){
+  const{V,R}=st;
+  if(st.big||!Number.isInteger(i)||i<0||i>=9**V.L||R[V.L][i])return false;
+  const p=pathOf(i,V.L);
+  for(let d=1;d<V.L;d++)if(R[d][idOf(p,d)])return false;
+  for(let d=0;d<st.target.length;d++)if(p[d]!==st.target[d])return false;
+  return true;
+}
+function nextTarget(st,p){
+  const{V,R}=st;
+  if(V.L===2){const[s,c]=p,vc=visPos(V,[s],c);const T=V.zip?shiftPos(s,vc):vc;return R[1][T]?[]:[T]}
+  if(V.L===4){ // Ultimate³ — William's rules
+    const[a,b,c,d]=p,v1=visPos(V,[a],b),v2=visPos(V,[a,b],c),v3=visPos(V,[a,b,c],d);
+    let T1=V.zip?shiftPos(a,v1):v1;                          // which Ultimate² board
+    if(R[1][T1])T1=a;                                        // finished -> stay in the Ultimate² board you played in
+    if(R[1][T1])return[];                                    // that's finished too -> the true legendary go anywhere
+    const T2vis=V.zip?shiftPos(v1,v2):v2;                    // which ultimate board inside it
+    let T2=idxAt(V,[T1],T2vis);
+    if(R[2][T1*9+T2])T2=idxAt(V,[T1],v1);                    // finished -> the ultimate board at the spot you played in
+    if(R[2][T1*9+T2])return[T1];                             // that's finished too -> anywhere in that Ultimate² board
+    const T3=idxAt(V,[T1,T2],V.zip?shiftPos(v2,v3):v3);      // which small board inside that
+    return R[3][(T1*9+T2)*9+T3]?[T1,T2]:[T1,T2,T3];          // finished -> anywhere in that ultimate board
+  }
+  const[u,s,c]=p,vs=visPos(V,[u],s),vc=visPos(V,[u,s],c);
+  let TU=V.zip?shiftPos(u,vs):vs;
+  const TSvis=V.zip?shiftPos(vs,vc):vc;
+  if(R[1][TU])TU=u;                       // house rule: finished -> stay where you played
+  if(R[1][TU])return[];                   // that one's finished too -> anywhere
+  const TS=idxAt(V,[TU],TSvis);
+  return R[2][TU*9+TS]?[TU]:[TU,TS];
+}
+function applyU(st,i){
+  const{V,R}=st,L=V.L,pl=turnSym(V.v,st.first,st.n),q=3-pl,p=pathOf(i,L);
+  R[L][i]=pl;st.last=i;st.n++;
+  for(let d=L-1;d>=0;d--){
+    const id=idOf(p,d),kids=R[d+1].slice(id*9,id*9+9),wild=d+1<L;
+    const a=hasLine(kids,pl,wild),b=hasLine(kids,q,wild);
+    const r=a&&b?3:a?pl:b?q:kids.every(Boolean)?3:0;
+    R[d][id]=r;if(!r)break;
+  }
+  st.big=R[0][0];
+  st.target=st.big?[]:nextTarget(st,p);
+}
+// keep the old names for anything that still uses them
+const fresh=freshU,legal=legalU,apply=applyU;
+
+/* ---------- 3D: 4x4x4, four in a row any direction (76 lines) ---------- */
+const C3LINES=(()=>{const out=[],seen=new Set(),id=(x,y,z)=>z*16+y*4+x;
+  for(let x=0;x<4;x++)for(let y=0;y<4;y++)for(let z=0;z<4;z++)for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(let dz=-1;dz<=1;dz++){
+    if(!dx&&!dy&&!dz)continue;const ex=x+3*dx,ey=y+3*dy,ez=z+3*dz;if(ex<0||ex>3||ey<0||ey>3||ez<0||ez>3)continue;
+    const line=[0,1,2,3].map(k=>id(x+k*dx,y+k*dy,z+k*dz)),key=[...line].sort((a,b)=>a-b).join();if(!seen.has(key)){seen.add(key);out.push(line)}}
+  return out})();
+/* ---------- Trifectacto: 5x5, four in a row, partner pieces, wild center ---------- */
+const T3LINES=(()=>{const out=[];for(let r=0;r<5;r++)for(let c=0;c<5;c++)for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){
+  const er=r+3*dr,ec=c+3*dc;if(er<0||er>4||ec<0||ec>4)continue;out.push([0,1,2,3].map(k=>(r+k*dr)*5+(c+k*dc)))}return out})();
+const T3PARTNER={1:2,2:3,3:1}; // X uses O, O uses Squiggle, Squiggle uses X
+function t3Owner(cells,line){
+  for(const P of[1,2,3]){const Q=T3PARTNER[P];if(line.every(k=>cells[k]===P||cells[k]===Q||cells[k]===4)&&line.some(k=>cells[k]===P))return P}
+  return 0;
+}
+
+/* ---------- one entry point for every type ---------- */
+function newState(v,first){
+  const k=kindOf(v);first=first||1;
+  if(k==="U")return freshU(parseV(v),first);
+  const st={kind:k,v,first,n:0,last:-1,over:false,winners:[],tie:false,winCells:[]};
+  if(k==="C3")st.cells=new Array(64).fill(0);
+  if(k==="T3"){st.cells=new Array(25).fill(0);st.cells[12]=4}
+  if(k==="INF"){st.cells=new Map();st.lastXY=null}
+  return st;
+}
+function legalMove(st,m){
+  if(st.kind==="U")return legalU(st,m);
+  if(st.over)return false;
+  if(st.kind==="C3")return Number.isInteger(m)&&m>=0&&m<64&&!st.cells[m];
+  if(st.kind==="T3")return Number.isInteger(m)&&m>=0&&m<25&&!st.cells[m];
+  if(st.kind==="INF")return Array.isArray(m)&&Math.abs(m[0])<=600&&Math.abs(m[1])<=600&&!st.cells.has(m[0]+","+m[1]);
+  return false;
+}
+function applyMove(st,m){
+  if(st.kind==="U"){applyU(st,m);return}
+  const p=turnSym(st.v,st.first,st.n);st.n++;
+  if(st.kind==="C3"){
+    st.cells[m]=p;st.last=m;
+    const won=C3LINES.find(l=>l.includes(m)&&l.every(k=>st.cells[k]===p));
+    if(won){st.over=true;st.winners=[p];st.winCells=won}else if(st.cells.every(Boolean)){st.over=true;st.tie=true}
+  }else if(st.kind==="T3"){
+    st.cells[m]=p;st.last=m;
+    const owners=new Set(),cells=new Set();
+    for(const l of T3LINES){if(!l.includes(m))continue;const o=t3Owner(st.cells,l);if(o){owners.add(o);l.forEach(k=>cells.add(k))}}
+    if(owners.size){st.over=true;st.winners=[...owners];st.tie=owners.size>1;st.winCells=[...cells]}
+    else if(st.cells.every(Boolean)){st.over=true;st.tie=true}
+  }else{
+    const key=m[0]+","+m[1];st.cells.set(key,p);st.last=key;st.lastXY=m;
+    for(const[dx,dy]of[[1,0],[0,1],[1,1],[1,-1]]){
+      const run=[[m[0],m[1]]];
+      for(const s of[1,-1]){let x=m[0]+dx*s,y=m[1]+dy*s;while(st.cells.get(x+","+y)===p){run.push([x,y]);x+=dx*s;y+=dy*s}}
+      if(run.length>=5){st.over=true;st.winners=[p];st.winCells=run.map(c=>c[0]+","+c[1]);break}
+    }
+  }
+}
+function finishState(st){ // common fields every screen uses
+  if(st.kind==="U"){st.over=!!st.big;st.winners=st.big===1||st.big===2?[st.big]:[];st.tie=st.big===3}
+  st.turn=st.over?0:turnSym(st.kind==="U"?st.V.v:st.v,st.first,st.n);
+  return st;
+}
+function replayMoves(v,first,moves){const st=newState(v,first);for(const m of moves){if(!legalMove(st,m))break;applyMove(st,m)}return finishState(st)}
+function replayGame(g,upto){let mv=decMoves(g.v,g.m);if(upto!=null)mv=mv.slice(0,upto);return replayMoves(g.v,g.f,mv)}
+// old helper kept for the rules tests
+const enc=m=>m.map(x=>enc2(x)).join("");
+const dec=s=>decMoves("u2",s);
+function replay(v,moves,first){return replayMoves(v,first,Array.isArray(moves)?moves:[])}
+/*ENGINE-END*/
+
+
+/* ===================== backend: Supabase, or a test stand-in ===================== */
+const REASONS=["bad_session","bad_name","weak_password","name_taken","bad_login","no_game","full","game_over","bad_move","not_your_turn","not_player","bad_variant","bad_display","bad_phone","bad_avatar","not_friend","no_invite","pick_symbol","seat_taken","bad_symbol","bad_message","bad_push"];
+function supabaseBackend(cfg){
+  const sb=supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false,autoRefreshToken:false}});
+  let tok=lsGet("u2-token",""),authCb=null;
+  async function rpc(fn,args){
+    const{data,error}=await sb.rpc(fn,args);
+    if(error){const msg=String(error.message||"");const code=REASONS.find(r=>msg.includes(r))||(/fetch|network/i.test(msg)?"network":"unknown");
+      if(code==="bad_session"){tok="";lsSet("u2-token","");authCb&&authCb(null)}
+      throw{code,message:msg}}
+    return data;
+  }
+  const startSession=r=>{tok=r.token;lsSet("u2-token",tok);authCb({uid:r.id})};
+  const fnURL=cfg.url+"/functions/v1/u2-notify";
+  async function callFn(body){
+    const r=await fetch(fnURL,{method:"POST",headers:{"Content-Type":"application/json",apikey:cfg.key,Authorization:"Bearer "+cfg.key},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));if(!r.ok)throw{code:j.error||"notify_failed"};return j;
+  }
+  return{
+    onAuth(cb){authCb=cb;if(!tok){cb(null);return}rpc("u2_me",{tok}).then(v=>cb({uid:v.id}),e=>{if(e.code!=="bad_session")cb(null)})},
+    async signUp(name,pw){startSession(await rpc("u2_signup",{p_name:name,p_pw:pw}))},
+    async signIn(name,pw){startSession(await rpc("u2_signin",{p_name:name,p_pw:pw}))},
+    async signOut(){const t=tok;tok="";lsSet("u2-token","");try{await rpc("u2_signout",{tok:t})}catch(e){}authCb(null)},
+    me:()=>rpc("u2_me",{tok}),
+    async profiles(ids){const{data}=await sb.from("players").select("id,name,display,avatar").in("id",ids);const o={};(data||[]).forEach(r=>o[r.id]={name:r.name,display:r.display,avatar:r.avatar});return o},
+    setProfile:(display,phone)=>rpc("u2_set_profile",{tok,p_display:display,p_phone:phone}),
+    setAvatar:a=>rpc("u2_set_avatar",{tok,p_avatar:a}),
+    contact:other=>rpc("u2_contact",{tok,p_other:other}),
+    invite:(gid,to)=>rpc("u2_invite",{tok,p_gid:gid,p_to:to}),
+    myInvites:()=>rpc("u2_my_invites",{tok}),
+    answerInvite:(id,yes,sym)=>rpc("u2_answer_invite",{tok,p_id:id,p_accept:yes,p_sym:sym??null}),
+    async getGame(gid){const{data}=await sb.from("games").select("id,v,x,o,s,f,m,q,t").eq("id",gid).maybeSingle();return data},
+    watchGames(uid,cb){
+      let alive=true;
+      const load=async()=>{const{data,error}=await sb.from("games").select("id,v,x,o,s,f,m,q,t").or(`x.eq.${uid},o.eq.${uid},s.eq.${uid}`).order("t",{ascending:false}).limit(300);if(alive&&!error)cb(data||[])};
+      let ch=sb.channel("mine-"+uid);
+      for(const col of["x","o","s"])ch=ch.on("postgres_changes",{event:"*",schema:"public",table:"games",filter:col+"=eq."+uid},()=>{if(alive)load()});
+      ch.subscribe(s=>{if(s==="SUBSCRIBED")load()});
+      const vis=()=>{if(!document.hidden)load()};document.addEventListener("visibilitychange",vis);
+      load();
+      return{reload:load,stop(){alive=false;sb.removeChannel(ch);document.removeEventListener("visibilitychange",vis)}};
+    },
+    createGame:(v,sym,first)=>rpc("u2_create_game",{tok,p_v:v,p_sym:sym,p_first:first}),
+    join:(gid,sym)=>rpc("u2_join_game",{tok,p_gid:gid,p_sym:sym??null}),
+    open:gid=>rpc("u2_open_game",{tok,p_gid:gid}),
+    move:(gid,m)=>rpc("u2_move",{tok,p_gid:gid,p_m:m}),
+    resign:gid=>rpc("u2_resign",{tok,p_gid:gid}),
+    chat:(gid,after)=>rpc("u2_chat",{tok,p_gid:gid,p_after:after||0}),
+    chatSend:(gid,body)=>rpc("u2_chat_send",{tok,p_gid:gid,p_body:body}),
+    chatLatest:()=>rpc("u2_chat_latest",{tok}),
+    chatChannel(gid,onPing){ // a "new message" ping between open copies of the game; the message itself is fetched privately
+      const ch=sb.channel("chat-"+gid,{config:{broadcast:{self:false}}}).on("broadcast",{event:"new"},()=>onPing()).subscribe();
+      return{ping:()=>ch.send({type:"broadcast",event:"new",payload:{}}),stop:()=>sb.removeChannel(ch)};
+    },
+    notify:(action,gid,extra)=>callFn({action,game:gid,tok,site:SITE,...(extra||{})}),
+    async pushKey(){return(await callFn({action:"key"})).key},
+    savePush:(e,p,a)=>rpc("u2_save_push",{tok,p_endpoint:e,p_p256dh:p,p_auth:a}),
+    dropPush:e=>rpc("u2_drop_push",{tok,p_endpoint:e}),
+  };
+}
+function mockBackend(){ // for testing only: imitates the database's checks, shared between tabs through localStorage
+  const K="u2mock",read=()=>{try{return JSON.parse(localStorage.getItem(K)||"{}")}catch(e){return{}}};
+  const write=d=>{localStorage.setItem(K,JSON.stringify(d));fire()};
+  const subs=new Set();const fire=()=>subs.forEach(f=>f());window.addEventListener("storage",e=>{if(e.key===K)fire()});
+  let authCb=null;const me=()=>sessionStorage.getItem("u2mock-uid");const fail=code=>{throw{code}};
+  const seated=(g,p)=>p&&(g.x===p||g.o===p||g.s===p);
+  const together=(d,a,b)=>a!==b&&Object.values(d.games||{}).some(g=>seated(g,a)&&seated(g,b));
+  const empties=g=>[1,2,3].filter(s=>(s<3||g.v==="t3")&&!g[["","x","o","s"][s]]);
+  return{
+    onAuth(cb){authCb=cb;setTimeout(()=>cb(me()?{uid:me()}:null),0)},
+    async signUp(name,pw){const d=read();d.acct=d.acct||{};if(d.acct[name.toLowerCase()])fail("name_taken");
+      const uid="u"+Math.random().toString(36).slice(2,8);d.acct[name.toLowerCase()]={uid,pw};d.users=d.users||{};d.users[uid]={id:uid,name};write(d);sessionStorage.setItem("u2mock-uid",uid);authCb({uid})},
+    async signIn(name,pw){const a=(read().acct||{})[name.toLowerCase()];if(!a||a.pw!==pw)fail("bad_login");sessionStorage.setItem("u2mock-uid",a.uid);authCb({uid:a.uid})},
+    async signOut(){sessionStorage.removeItem("u2mock-uid");authCb(null)},
+    async me(){const d=read(),u=d.users[me()];return{...u,phone:(d.phones||{})[me()]||null}},
+    async profiles(ids){const u=read().users||{},o={};ids.forEach(i=>{if(u[i])o[i]={name:u[i].name,display:u[i].display||null,avatar:u[i].avatar||null}});return o},
+    async setProfile(display,phone){const d=read();display=(display||"").trim()||null;phone=(phone||"").replace(/[^0-9+]/g,"")||null;
+      if(display&&display.length>24)fail("bad_display");if(phone&&!/^\+?[0-9]{7,15}$/.test(phone))fail("bad_phone");
+      d.users[me()].display=display;d.phones=d.phones||{};d.phones[me()]=phone;write(d)},
+    async setAvatar(a){const d=read();d.users[me()].avatar=a;write(d)},
+    async contact(other){const d=read();return together(d,me(),other)?((d.phones||{})[other]||null):null},
+    async invite(gid,to){const d=read(),g=d.games[gid];if(!seated(g,me()))fail("not_player");if(!empties(g).length)fail("full");if(seated(g,to))return;if(!together(d,me(),to))fail("not_friend");
+      d.invites=d.invites||{};const id="i"+Math.random().toString(36).slice(2,8);d.invites[id]={id,game:gid,from:me(),to,created:Date.now()};write(d)},
+    async myInvites(){const d=read();return Object.values(d.invites||{}).filter(i=>i.to===me()&&d.games[i.game]&&empties(d.games[i.game]).length&&!d.games[i.game].q).map(i=>({...i,v:d.games[i.game].v}))},
+    async answerInvite(id,yes,sym){const d=read(),i=(d.invites||{})[id];if(!i||i.to!==me())fail("no_invite");if(yes)await this.join(i.game,sym);const d2=read();delete d2.invites[id];write(d2);return i.game},
+    async getGame(gid){const g=(read().games||{})[gid];return g?{id:gid,...g}:null},
+    watchGames(uid,cb){let last;const f=()=>{const d=read(),list=Object.entries(d.games||{}).map(([id,g])=>({id,...g})).filter(g=>seated(g,uid)).sort((a,b)=>b.t-a.t);
+        const s=JSON.stringify(list);if(s!==last){last=s;cb(list)}};subs.add(f);setTimeout(f,0);return{reload:async()=>f(),stop:()=>subs.delete(f)}},
+    async createGame(v,sym,first){const d=read();d.games=d.games||{};const gid="g"+Math.random().toString(36).slice(2,9);
+      d.games[gid]={v,f:first||1,x:sym===1?me():null,o:sym===2?me():null,s:sym===3?me():null,m:"",q:null,t:Date.now()};d.users[me()].game=gid;write(d);return gid},
+    async join(gid,sym){const d=read(),g=(d.games||{})[gid],u=d.users[me()];if(!g)fail("no_game");
+      if(seated(g,me())){u.game=gid;write(d);return}const em=empties(g);if(!em.length)fail("full");
+      if(sym==null){if(em.length>1)fail("pick_symbol");sym=em[0]}if(!em.includes(sym))fail("seat_taken");
+      g[["","x","o","s"][sym]]=me();g.t=Date.now();u.game=gid;Object.keys(d.invites||{}).forEach(k=>{if(d.invites[k].game===gid&&(em.length===1||d.invites[k].to===me()))delete d.invites[k]});write(d)},
+    async open(gid){const d=read();d.users[me()].game=gid;write(d)},
+    async move(gid,newM){const d=read(),g=d.games[gid],step=stepOf(g.v),n=g.m.length/step;if(g.q)fail("game_over");if(newM.length!==g.m.length+step||!newM.startsWith(g.m))fail("bad_move");
+      const sym=turnSym(g.v,g.f,n);if(g[["","x","o","s"][sym]]!==me())fail("not_your_turn");g.m=newM;g.t=Date.now();write(d)},
+    async resign(gid){const d=read();d.games[gid].q=me();d.games[gid].t=Date.now();write(d)},
+    async chat(gid,after){const d=read();return(d.msgs||[]).filter(m=>m.game===gid&&m.id>(after||0))},
+    async chatSend(gid,body){const d=read();d.msgs=d.msgs||[];const id=d.msgs.length+1;d.msgs.push({id,game:gid,player:me(),body:body.trim(),created:new Date().toISOString()});write(d);return id},
+    async chatLatest(){const d=read(),out={};(d.msgs||[]).forEach(m=>{if(seated(d.games[m.game],me()))out[m.game]={game:m.game,id:m.id,player:m.player}});return Object.values(out)},
+    chatChannel(gid,onPing){const f=()=>onPing();subs.add(f);return{ping:()=>{},stop:()=>subs.delete(f)}},
+    async notify(){return{sent:0}},
+    async pushKey(){throw{code:"notify_failed"}},
+    async savePush(){},async dropPush(){},
+  };
+}
+
+/* ===================== page basics ===================== */
+const app=document.getElementById("app"),toastEl=document.getElementById("toast");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const svgX=(w=1.5,rot=0)=>`<svg viewBox="0 0 10 10" aria-hidden="true"${rot?` style="transform:rotate(${-45*rot}deg)"`:""}><path class="mk x" stroke-width="${w}" d="M2.4 2.4L7.6 7.6M7.6 2.4L2.4 7.6"/></svg>`;
+const svgO=(w=1.5)=>`<svg viewBox="0 0 10 10" aria-hidden="true"><circle class="mk o" stroke-width="${w}" cx="5" cy="5" r="2.9"/></svg>`;
+const svgS=(w=1.5,rot=0)=>`<svg viewBox="0 0 10 10" aria-hidden="true"${rot?` style="transform:rotate(${-45*rot}deg)"`:""}><path class="mk s" stroke-width="${w}" d="M1.8 6.4C2.8 2.6 4.2 2.6 5 5S7.2 7.4 8.2 3.6"/></svg>`;
+const svgA=()=>`<svg viewBox="0 0 10 10" aria-hidden="true"><text class="mk a" x="5" y="7.6" text-anchor="middle" font-size="7.5">A</text></svg>`;
+const mark=(p,w,rot=0)=>p===1?svgX(w,rot):p===2?svgO(w):p===3?svgS(w,rot):p===4?svgA():"";
+const SYMCOLOR={1:"var(--x)",2:"var(--o)",3:"var(--s)"};
+const pretty=p=>p.replace("-"," ");
+const nameHTML=v=>esc(variantName(v)).replace("²",`<span class="sq">2</span>`).replace("³",`<span class="sq">3</span>`);
+function toast(msg){toastEl.textContent=msg;toastEl.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>toastEl.hidden=true,3800)}
+const SITE=location.origin+location.pathname;
+function lsGet(k,d){try{return localStorage.getItem(k)??d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+let B=null,uid=null,me=null,profiles={},phones={},authReady=false;
+let games=[],gamesLoaded=false,watcher=null,routed=false,invites=[],chatLatest={};
+let curId=null,screen="game";
+let pendingJoin=null,pendingOpen=null,authMode="signin",formErr="",busy=false;
+let zoom4=[],zoomU=null,sel=null,seenKey="",animKey=null,confirmResign=false;
+let replayK=null,replayTimer=null,chatOpen=false,chats={},chatSub=null,chatSubGid=null,joinPick=null,preview=null,saveOpen=false;
+let view3d=lsGet("u2-3dview","layers"),cubeYaw=-0.6,cubePitch=0.45,cubeSpin=false,cubeRAF=0;
+let infView={};
+const PICK0={type:"u2",tilt:false,zip:false,sym:1,first:1,to:"",to2:""};
+let pick=(()=>{try{return{...PICK0,...JSON.parse(lsGet("u2-pick","{}")),to:"",to2:""}}catch(e){return{...PICK0}}})();
+let pendingAvatar=undefined;
+
+function readLink(){
+  const m=/^#(join|g)-([A-Za-z0-9_-]{4,40})$/.exec(location.hash||"");
+  if(m){if(m[1]==="join"){pendingJoin=m[2];try{sessionStorage.setItem("u2-join",pendingJoin)}catch(e){}}else pendingOpen=m[2]}
+  try{history.replaceState(null,"",SITE)}catch(e){}
+  return !!m;
+}
+if(!readLink()){try{pendingJoin=sessionStorage.getItem("u2-join")}catch(e){}}
+window.addEventListener("hashchange",()=>{if(readLink()&&me&&gamesLoaded)route()});
+
+function errText(e){
+  const c=(e&&e.code)||"";
+  return({name_taken:"That username is taken. Pick another.",bad_login:"Username or password is wrong.",weak_password:"Password needs at least 6 characters.",
+    bad_name:"Usernames are 3 to 20 letters, numbers or underscores.",bad_display:"Display names can be up to 24 characters.",
+    bad_phone:"That phone number doesn't look right. Use digits only, like 7325551234.",bad_avatar:"That picture couldn't be used. Try a different one.",
+    full:"That game is already full.",no_game:"That game couldn't be found.",seat_taken:"Someone just took that symbol. Pick another.",
+    network:"Couldn't reach the game server. Check your connection and try again."})[c]||"Something went wrong. Try again.";
+}
+
+/* ----- people ----- */
+function needProfiles(ids){
+  const miss=[...new Set(ids.filter(id=>id&&!(id in profiles)))];if(!miss.length)return;
+  miss.forEach(id=>profiles[id]={name:"",display:null,avatar:null});
+  B.profiles(miss).then(o=>{Object.assign(profiles,o);render()},()=>{});
+}
+const dispName=id=>{const p=profiles[id]||{};return p.display||p.name||"Your friend"};
+const who=id=>id===uid?"You":dispName(id);
+function avHTML(id,cls=""){
+  const p=profiles[id]||{};const nm=p.display||p.name||"?";
+  if(p.avatar)return`<img class="av ${cls}" src="${esc(p.avatar)}" alt="">`;
+  return`<span class="av ${cls}" style="background:${avColor(nm)}" aria-hidden="true">${esc(nm.slice(0,1).toUpperCase())}</span>`;
+}
+function avColor(nm){let h=0;for(const ch of nm)h=(h*31+ch.charCodeAt(0))%360;return`hsl(${h} 45% 45%)`}
+function getPhone(id){
+  if(!id||id in phones)return phones[id]||"";
+  phones[id]="";B.contact(id).then(p=>{phones[id]=p||""},()=>{});
+  return"";
+}
+function seatsOf(g){return{1:g.x||null,2:g.o||null,3:g.s||null}}
+function coPlayers(g){return symsOf(g.v).map(s=>seatsOf(g)[s]).filter(p=>p&&p!==uid)}
+function friends(){const seen=new Set(),out=[];for(const g of games)for(const p of coPlayers(g))if(!seen.has(p)){seen.add(p);out.push(p)}return out}
+
+/* ----- texting ----- */
+function smsHref(body,phone){return`sms:${(phone||"").replace(/[^\d+]/g,"")}&body=${encodeURIComponent(body)}`}
+const gameLink=gid=>SITE+"#g-"+gid, inviteLink=gid=>SITE+"#join-"+gid;
+
+/* ----- per-game summary (works for every type) ----- */
+function info(g,upto){
+  const st=replayGame(g,upto),seats=seatsOf(g),syms=symsOf(g.v);
+  const mySym=syms.find(s=>seats[s]===uid)||0;
+  let over=st.over,winners=st.winners.slice(),tie=st.tie;
+  if(g.q&&!st.over&&upto==null){over=true;winners=syms.filter(s=>seats[s]&&seats[s]!==g.q);tie=winners.length>1}
+  const turn=over?0:st.turn,turnPlayer=turn?seats[turn]:null,myTurn=!over&&!!turnPlayer&&turnPlayer===uid;
+  const empty=syms.filter(s=>!seats[s]);
+  let result=null;
+  if(over)result=winners.includes(mySym)?(winners.length>1?"tie":"win"):(winners.length===0?"tie":"loss");
+  let pill;
+  if(g.q&&upto==null)pill=g.q===uid?"You resigned":result==="win"?"They resigned":"Someone resigned";
+  else if(over)pill=result==="win"?"You won":result==="tie"?"Tie":"You lost";
+  else if(myTurn)pill="Your turn";
+  else if(!turnPlayer)pill="Waiting to join";
+  else pill="Their turn";
+  return{st,seats,syms,mySym,over,winners,tie,turn,turnPlayer,myTurn,empty,result,pill,others:coPlayers(g)};
+}
+const unreadChat=g=>{const l=chatLatest[g.id];return!!(l&&l.player!==uid&&l.id>+lsGet("u2-read-"+g.id,"0"))};
+const waitingCount=()=>games.filter(g=>info(g).myTurn).length+invites.length;
+function setBadge(){try{const n=waitingCount();if(navigator.setAppBadge){n?navigator.setAppBadge(n):navigator.clearAppBadge()}}catch(e){}}
+
+/* ----- background refresh: invites and chat dots ----- */
+async function loadInvites(){
+  if(!uid||!B)return;
+  try{const list=await B.myInvites();const changed=JSON.stringify(list)!==JSON.stringify(invites);invites=list||[];needProfiles(invites.map(i=>i.from));if(changed)render()}catch(e){}
+  try{const l=await B.chatLatest();const m={};(l||[]).forEach(r=>m[r.game]=r);const ch=JSON.stringify(m)!==JSON.stringify(chatLatest);chatLatest=m;if(ch)render()}catch(e){}
+}
+setInterval(()=>{if(!document.hidden)loadInvites()},20000);
+setInterval(()=>{if(!document.hidden&&screen==="game"&&curId)loadChat(curId)},8000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){loadInvites();if(curId)loadChat(curId)}});
+
+/* ----- chat ----- */
+async function loadChat(gid){
+  if(!B||!gid)return;const c=chats[gid]||(chats[gid]={msgs:[],lastId:0,loaded:false});
+  try{const list=await B.chat(gid,c.lastId);c.loaded=true;if(list&&list.length){c.msgs.push(...list);c.lastId=list[list.length-1].id;needProfiles(list.map(m=>m.player));
+      if(chatOpen&&curId===gid)markRead(gid);if(curId===gid&&screen==="game")render()}else if(curId===gid&&screen==="game"&&!c.shown){c.shown=true;render()}}catch(e){}
+}
+function markRead(gid){const c=chats[gid];if(c&&c.lastId){lsSet("u2-read-"+gid,String(c.lastId));if(chatLatest[gid])chatLatest[gid].id=Math.min(chatLatest[gid].id,c.lastId)}}
+function subscribeChat(gid){
+  if(chatSubGid===gid)return;if(chatSub){chatSub.stop();chatSub=null}
+  chatSubGid=gid;if(gid)chatSub=B.chatChannel(gid,()=>loadChat(gid));
+}
+// Only the newest message in a game shows as a bubble. It stays until you've had the game open
+// on screen for 10 seconds, until the next day, or until anyone sends a newer message.
+let seenAt=(()=>{try{return JSON.parse(lsGet("u2-seen","{}"))||{}}catch(e){return{}}})();
+function saveSeen(){const k=Object.keys(seenAt);if(k.length>300)k.slice(0,k.length-300).forEach(x=>delete seenAt[x]);lsSet("u2-seen",JSON.stringify(seenAt))}
+function bubbleFor(gid,player){
+  const c=chats[gid];if(!c||!c.msgs.length)return"";
+  const m=c.msgs[c.msgs.length-1];if(m.player!==player)return"";
+  if(Date.now()-new Date(m.created).getTime()>24*60*60*1000)return"";
+  const key=gid+":"+m.id;let s=seenAt[key];
+  if(!s&&!document.hidden&&screen==="game"&&curId===gid){s=seenAt[key]=Date.now();saveSeen();setTimeout(()=>{if(screen==="game"&&curId===gid&&replayK==null)render()},10200)}
+  if(s&&Date.now()-s>10000)return"";
+  return`<span class="bubble">${esc(m.body)}</span>`;
+}
+
+/* ----- rules text ----- */
+function rulesHTML(v){
+  const k=kindOf(v);let li;
+  if(k==="C3")li=["The board is a 4 by 4 by 4 cube, shown as four layers.","Play any empty square.",
+    "Get four in a row to win: along a layer, straight down through the layers, or diagonally through them, including corner to corner through the whole cube. There are 76 possible lines.",
+    "If the cube fills up with no line, it's a tie.","The Cube button shows it in 3D: drag to turn it."];
+  else if(k==="INF")li=["Play anywhere. The board keeps growing so there's always room past the outermost pieces.","Get five or more in a row (across, down or diagonal) to win.",
+    "Drag to move around, pinch or use the + and − buttons to zoom, and Center to jump back to the action."];
+  else if(k==="T3")li=["Three players on a 5 by 5 board: X, O and Squiggle. Turns go X, then Squiggle, then O (starting from whoever was picked to go first).",
+    "The center square is A, a wild square anyone can use.","Get four in a row to win. Your line can mix your own pieces with your partner's: X uses O, O uses Squiggle, Squiggle uses X. A line must include at least one of your own pieces, so four O's is O's line, not X's.",
+    "A move that completes someone else's line makes them win, even on your turn.","If one move completes lines for two players, those two tie and the third player loses.",
+    "If the board fills with no line, it's a tie.","If someone resigns, the other two players tie."];
+  else{
+    const V=parseV(v),U2=V.L>=3;
+    li=V.L===4?["The board is 9 Ultimate² boards. Each holds 9 ultimate boards, each holds 9 small boards, and each small board has 9 squares. 6,561 squares in all.",
+      V.zip?"Where you play decides where your opponent plays next (see Zip-Zap-Zo below).":"Where you play decides where your opponent plays next, three levels down. The spot of your ultimate board picks their Ultimate² board, the spot of your small board picks their ultimate board inside it, and the spot of your square picks their small board inside that.",
+      "If that small board is already finished, they may play anywhere in that ultimate board.",
+      "If that ultimate board is already finished, they go to the ultimate board at the same spot as the one you just played in. If that one is finished too, they may play anywhere in that Ultimate² board.",
+      "If that Ultimate² board is already finished, they stay in the Ultimate² board you just played in. If that one is finished too, they unlock the true legendary go anywhere: any open square on the whole board.",
+      "Win small boards to claim ultimate boards, ultimate boards to claim Ultimate² boards, and three Ultimate² boards in a row wins.",
+      "The whole board is a map: tap any Ultimate² board to zoom in and play. Zoom in again for a single ultimate board."]
+     :U2?["The board is 9 ultimate boards, each made of 9 small boards, each made of 9 squares. 729 squares in all.",
+      V.zip?"Where you play decides where your opponent plays next (see Zip-Zap-Zo below).":"Where you play decides where your opponent plays next. The spot of the small board you played in picks their ultimate board. The spot of your square picks their small board inside it.",
+      "If that small board is already finished, they may play anywhere in that ultimate board.",
+      "If that ultimate board is already finished, they stay in the ultimate board you just played in, and your square still picks their small board there.",
+      "If that board is finished too, they may play anywhere at all.",
+      "Win a small board to claim its spot on its ultimate board. Win an ultimate board to claim its spot on the big board. Three ultimate boards in a row wins."]
+     :["The board is 9 small boards, each made of 9 squares. 81 squares in all.",
+      V.zip?"Where you play decides where your opponent plays next (see Zip-Zap-Zo below).":"The spot of the square you play picks the small board your opponent plays in next.",
+      "If that small board is already finished, they may play anywhere.","Win a small board to claim its spot on the big board. Three small boards in a row wins."];
+    li.push("A tied board counts for both players when making three in a row. If one move gives both players three in a row at once, that board is a tie (and on the big board, the whole game is a tie).");
+    if(V.tilt&&V.L===4)li.push("Tilt: at every level, the center board is twisted 45°. Boards inside a twisted center board twist again, so some look square but are turned a quarter turn. Every square and board sends you wherever it visually sits.");
+    else if(V.tilt)li.push(U2?"Tilt: the center small board of every ultimate board is twisted 45°, and so is the center ultimate board. The center small board inside the center ultimate board is twisted twice, so it looks square again but is turned a quarter turn. Every square and board sends you wherever it visually sits.":
+      "Tilt: the center small board is twisted 45°. Every square sends you wherever it visually sits, so its corners point up, down, left and right.");
+    if(V.zip&&V.L===4)li.push("Zip-Zap-Zo: instead of sending your opponent to the matching spot, each spot you play zips them one step that way at its level: between Ultimate² boards, between ultimate boards, and between small boards. The center spot keeps them where they are. Going off an edge wraps around to the other side.");
+    else if(V.zip)li.push(U2?"Zip-Zap-Zo: instead of sending your opponent to the matching spot, the spot you play in zips them one step that way. The small board you play in moves them that direction between ultimate boards, and your square moves them that direction between small boards. The center spot keeps them where they are. Going off an edge wraps around to the other side.":
+      "Zip-Zap-Zo: instead of sending your opponent to the matching board, your square zips them one board in its direction from the board you played in. The center square keeps them in the same board. Going off an edge wraps around to the other side.");
+  }
+  return`<details class="card"><summary>Rules: ${nameHTML(v)}</summary><ol class="rules">${li.map(t=>`<li>${t}</li>`).join("")}</ol></details>`;
+}
+
+/* ===================== screens ===================== */
+function renderAuth(){
+  const up=authMode==="signup";
+  app.innerHTML=`<div class="stack" style="gap:22px">
+    <header class="stack" style="gap:8px"><h1>Ultimate<sup>2</sup></h1>
+      <p class="muted" style="max-width:56ch">Ultimate tic-tac-toe and friends: Ultimate², Tilt, Zip-Zap-Zo, 3D, Infinite and three-player Trifectacto.</p></header>
+    ${pendingJoin?`<div class="banner">A friend invited you to a game. ${up?"Make an account":"Sign in"} and you'll join it right away.</div>`:""}
+    <section class="card stack">
+      <h2>${up?"Make an account":"Sign in"}</h2>
+      <form id="authform" novalidate>
+        <label class="f">Username<input type="text" id="u-name" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" required></label>
+        <label class="f">Password<input type="password" id="u-pw" autocomplete="${up?"new-password":"current-password"}" minlength="6" required></label>
+        ${up?`<label class="f">Phone number (optional, but highly recommended)<input type="tel" id="u-phone" autocomplete="tel" placeholder="So friends can text you game updates"></label>`:""}
+        ${formErr?`<p class="err">${esc(formErr)}</p>`:""}
+        <div class="row"><button class="btn" type="submit"${busy?" disabled":""}>${up?"Make account":"Sign in"}</button></div>
+      </form>
+      <p class="muted">${up?`Already have an account? <button class="btn ghost small" data-act="mode" data-m="signin">Sign in</button>`:`New here? <button class="btn ghost small" data-act="mode" data-m="signup">Make an account</button>`}</p>
+      ${up?`<p class="muted" style="font-size:.9rem">Usernames are 3 to 20 letters, numbers or underscores. Your phone number is only shown to people you play with, so their Text buttons reach you. There's no email, so write your password down: it can't be reset.</p>`:""}
+    </section>
+  </div>`;
+}
+async function submitAuth(){
+  const name=document.getElementById("u-name").value.trim(),pw=document.getElementById("u-pw").value;
+  const phoneEl=document.getElementById("u-phone"),phone=phoneEl?phoneEl.value.trim():"";
+  if(!/^[A-Za-z0-9_]{3,20}$/.test(name)){formErr="Usernames are 3 to 20 letters, numbers or underscores.";render();return}
+  if(pw.length<6){formErr="Password needs at least 6 characters.";render();return}
+  const digits=phone.replace(/[^0-9+]/g,"");
+  if(phone&&!/^\+?[0-9]{7,15}$/.test(digits)){formErr=errText({code:"bad_phone"});render();return}
+  busy=true;formErr="";render();
+  try{
+    if(authMode==="signup"){await B.signUp(name,pw);if(digits){try{await B.setProfile(null,digits);if(me)me.phone=digits}catch(e){}}}
+    else await B.signIn(name,pw);
+  }catch(e){formErr=errText(e)}
+  busy=false;render();
+}
+
+function topbar(backTo){
+  const n=waitingCount();setBadge();
+  return`<div class="topbar">
+    ${backTo?`<button class="btn ghost small" data-act="${backTo}">← Back</button>`:`<button class="btn ghost small" data-act="menu" aria-label="Your games${n?`, ${n} waiting for you`:""}">☰ Games${n?`<span class="badge">${n}</span>`:""}</button>`}
+    <button class="avbtn" data-act="profile" aria-label="Your profile">${avHTML(uid)}</button></div>`;
+}
+
+/* ----- profile + notifications ----- */
+const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isIOS=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+function pushState(){
+  if(!("serviceWorker"in navigator)||!("PushManager"in window)||!("Notification"in window))return isIOS()&&!isStandalone()?"homescreen":"unsupported";
+  if(Notification.permission==="denied")return"denied";
+  return lsGet("u2-push","0")==="1"&&Notification.permission==="granted"?"on":"off";
+}
+function notifHTML(){
+  const s=pushState();
+  const txt={homescreen:"On iPhone, notifications only work from the home-screen app. In Safari tap Share, then Add to Home Screen, open the game from that icon, sign in, and come back here.",
+    unsupported:"This browser can't show notifications.",denied:"Notifications are blocked for this app. Turn them on in your phone's Settings, under Notifications.",
+    on:"Notifications are on for this phone. You'll hear about your turns, invites and chat messages.",off:"Get a notification when it's your turn, when someone invites you, and when someone chats."}[s];
+  return`<section class="card stack" style="gap:10px"><h2>Notifications</h2><p>${txt}</p>
+    ${s==="off"?`<div class="row"><button class="btn small" data-act="push-on">Turn on notifications</button></div>`:""}
+    ${s==="on"?`<div class="row"><button class="btn ghost small" data-act="push-off">Turn off on this phone</button></div>`:""}</section>`;
+}
+function urlB64(b){const p="=".repeat((4-b.length%4)%4),s=atob((b+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...s].map(c=>c.charCodeAt(0)))}
+async function pushOn(){
+  let perm;try{perm=await Notification.requestPermission()}catch(e){perm="default"}
+  if(perm!=="granted"){toast("Notifications weren't allowed.");render();return}
+  try{
+    const reg=await navigator.serviceWorker.register("sw.js");await navigator.serviceWorker.ready;
+    const key=await B.pushKey();
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64(key)});
+    const j=sub.toJSON();await B.savePush(j.endpoint,j.keys.p256dh,j.keys.auth);
+    lsSet("u2-push","1");toast("Notifications are on.");
+  }catch(e){toast("Couldn't turn on notifications. The notification sender may not be set up yet.")}
+  render();
+}
+async function pushOff(){
+  try{const reg=await navigator.serviceWorker.getRegistration();const sub=reg&&await reg.pushManager.getSubscription();if(sub){await B.dropPush(sub.endpoint).catch(()=>{});await sub.unsubscribe()}}catch(e){}
+  lsSet("u2-push","0");toast("Notifications are off for this phone.");render();
+}
+function renderProfile(){
+  const auto=lsGet("u2-auto","0")==="1";
+  const shownAv=pendingAvatar===undefined?(profiles[uid]||{}).avatar:pendingAvatar;
+  const saved=profiles[uid];profiles[uid]={...saved,avatar:shownAv};const big=avHTML(uid,"lg");profiles[uid]=saved;
+  app.innerHTML=`<div class="stack" style="gap:20px">
+    ${topbar(curId?"back":"menu")}
+    <h2>Your profile</h2>
+    <div class="profile-top">${big}
+      <div class="row"><label class="btn ghost small" for="av-file">Choose picture</label>${shownAv?`<button class="btn ghost small" data-act="av-remove">Remove picture</button>`:""}</div>
+      <input type="file" id="av-file" accept="image/*" hidden></div>
+    <form id="profileform" novalidate>
+      <p><span class="label">Username</span><br><b>${esc(me.name)}</b> <span class="muted" style="font-size:.9rem">(what you sign in with; can't be changed)</span></p>
+      <label class="f">Display name<input type="text" id="p-display" maxlength="24" value="${esc(me.display||"")}" placeholder="${esc(me.name)}"></label>
+      <p class="muted" style="font-size:.9rem;margin-top:-6px">What other players see. Leave blank to show your username.</p>
+      <label class="f">Phone number<input type="tel" id="p-phone" autocomplete="tel" value="${esc(me.phone||"")}" placeholder="Digits, like 7325551234"></label>
+      <p class="muted" style="font-size:.9rem;margin-top:-6px">Only people you've played with can see it, so their Text buttons go straight to you.</p>
+      <label class="row" style="font-weight:700"><input type="checkbox" id="p-auto"${auto?" checked":""}> Open Messages after each move</label>
+      ${formErr?`<p class="err">${esc(formErr)}</p>`:""}
+      <div class="row"><button class="btn" type="submit"${busy?" disabled":""}>Save</button></div>
+    </form>
+    ${notifHTML()}
+    <div class="row"><button class="btn ghost small" data-act="history">Game history and stats</button><button class="btn ghost small" data-act="signout">Sign out</button></div>
+  </div>`;
+}
+function shrinkPicture(file){
+  return new Promise((ok,bad)=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{const S=128,c=document.createElement("canvas");c.width=c.height=S;const x=c.getContext("2d");
+      const s=Math.min(img.width,img.height);x.drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,S,S);URL.revokeObjectURL(url);
+      let q=.82,d=c.toDataURL("image/jpeg",q);while(d.length>38000&&q>.3){q-=.12;d=c.toDataURL("image/jpeg",q)}ok(d)};
+    img.onerror=()=>{URL.revokeObjectURL(url);bad()};img.src=url;
+  });
+}
+async function saveProfile(){
+  const display=document.getElementById("p-display").value.trim(),phone=document.getElementById("p-phone").value.trim();
+  lsSet("u2-auto",document.getElementById("p-auto").checked?"1":"0");
+  busy=true;formErr="";render();
+  try{
+    await B.setProfile(display,phone);
+    if(pendingAvatar!==undefined)await B.setAvatar(pendingAvatar);
+    me=await B.me();profiles[uid]={name:me.name,display:me.display,avatar:me.avatar};pendingAvatar=undefined;
+    busy=false;toast("Profile saved.");screen=curId?"game":"menu";render();
+  }catch(e){busy=false;formErr=errText(e);render()}
+}
+
+/* ----- picking a seat (Trifectacto: second person chooses O or Squiggle) ----- */
+function joinPickHTML(){
+  if(!joinPick)return"";
+  return`<section class="card invite-card stack" style="gap:10px"><p><b>Pick your symbol</b> for ${nameHTML(joinPick.v)}${joinPick.from?` with ${esc(dispName(joinPick.from))}`:""}.</p>
+    <div class="row">${joinPick.options.map(s=>`<button class="btn small" data-act="pick-seat" data-s="${s}">${mark(s,1.6).replace("<svg",`<svg width="18" height="18" style="vertical-align:-3px;margin-right:4px"`)}${SYMNAME[s]}</button>`).join("")}
+    <button class="btn ghost small" data-act="pick-cancel">Not now</button></div></section>`;
+}
+async function askSeat(gid,inviteId){
+  const g=await B.getGame(gid).catch(()=>null);if(!g){toast(errText({code:"no_game"}));return}
+  const em=symsOf(g.v).filter(s=>!seatsOf(g)[s]);
+  joinPick={gid,inviteId,v:g.v,options:em,from:coPlayersAll(g)[0]};needProfiles(coPlayersAll(g));screen="menu";render();window.scrollTo(0,0);
+}
+const coPlayersAll=g=>[g.x,g.o,g.s].filter(Boolean);
+async function doJoin(gid,sym,inviteId){
+  try{
+    if(inviteId)await B.answerInvite(inviteId,true,sym);else await B.join(gid,sym);
+    joinPick=null;invites=invites.filter(i=>i.id!==inviteId);
+    await watcher.reload();toast("You joined the game!");B.notify("join",gid).catch(()=>{});openGame(gid);
+  }catch(e){
+    if(e&&e.code==="pick_symbol"){askSeat(gid,inviteId);return}
+    if(inviteId)invites=invites.filter(i=>i.id!==inviteId);
+    joinPick=null;toast(errText(e));render();
+  }
+}
+
+/* ----- games menu ----- */
+function gameRow(g){
+  const f=info(g);needProfiles(f.others);
+  const opp=f.others.length?f.others.map(dispName).join(" & "):"No one yet";
+  return`<button class="gamerow${g.id===curId?" cur":""}" data-act="open" data-id="${esc(g.id)}">
+    <span class="left">${f.others.length?avHTML(f.others[0]):`<span class="av" style="background:var(--grid-strong)">?</span>`}<span class="meta"><b>vs ${esc(opp)}${unreadChat(g)?`<span class="dotnew" title="New chat message"></span>`:""}</b><span class="muted">${nameHTML(g.v)} · ${f.st.n} move${f.st.n===1?"":"s"} · you're ${SYMNAME[f.mySym]||"?"}</span></span></span>
+    <span class="pill${f.myTurn?" go":""}">${esc(f.pill)}</span></button>`;
+}
+function pickV(){return pick.type==="u1"||pick.type==="u2"||pick.type==="u3"?pick.type+(pick.tilt?"t":"")+(pick.zip?"z":""):pick.type}
+function newGameHTML(fr){
+  const isU=pick.type==="u1"||pick.type==="u2"||pick.type==="u3",three=pick.type==="t3",syms=three?[1,2,3]:[1,2];
+  if(!syms.includes(pick.sym))pick.sym=1;if(!syms.includes(pick.first))pick.first=1;
+  const opt=(name,val,cur,label,sub,type="radio",dis=false)=>`<label class="opt${dis?" disabled":""}"><input type="${type}" name="${name}" value="${val}"${cur?" checked":""}${dis?" disabled":""}><span><b>${label}</b>${sub?`<span>${sub}</span>`:""}</span></label>`;
+  const friendSel=(name,val)=>`<select name="${name}"><option value="">${name==="to"?"Anyone: I'll send an invite link":"No one else yet"}</option>${fr.map(id=>`<option value="${esc(id)}"${val===id?" selected":""}>${esc(dispName(id))}</option>`).join("")}</select>`;
+  return`<section class="card stack" style="gap:14px" id="newcard"><h2>Start a new game</h2>
+    <form id="newform">
+      <div class="choice" role="radiogroup" aria-label="Game">
+        ${opt("type","u1",pick.type==="u1","Ultimate","9 boards, 81 squares")}
+        ${opt("type","u2",pick.type==="u2",`Ultimate<span class="sq">2</span>`,"729 squares")}
+        ${opt("type","u3",pick.type==="u3",`Ultimate<span class="sq">3</span>`,"6,561 squares")}
+        ${opt("type","c3",pick.type==="c3","3D","4×4×4 cube, four in a row")}
+        ${opt("type","inf",pick.type==="inf","Infinite","No edges, five in a row")}
+        ${opt("type","t3",pick.type==="t3","Trifectacto","3 players, 5×5, four in a row")}
+      </div>
+      ${isU?`<div class="choice">${opt("tilt","1",pick.tilt,"Tilt","Center boards twisted 45°","checkbox")}${opt("zip","1",pick.zip,"Zip-Zap-Zo","Moves zip you one board that way","checkbox")}</div>`:""}
+      <p class="label">You play as</p><div class="seg">${syms.map(s=>opt("sym",s,pick.sym===s,SYMNAME[s])).join("")}</div>
+      <p class="label">Who goes first</p><div class="seg">${syms.map(s=>opt("first",s,pick.first===s,SYMNAME[s])).join("")}</div>
+      ${three?`<p class="muted" style="font-size:.9rem;margin-top:-4px">Turns go X, Squiggle, O. The next person to join picks from the two symbols left; the last gets what remains.</p>`:""}
+      <label class="f">Who to play${friendSel("to",pick.to)}</label>
+      ${three?`<label class="f">Third player${friendSel("to2",pick.to2)}</label>`:""}
+      <div class="row"><button class="btn" type="submit"${busy?" disabled":""}>Start game</button></div>
+    </form>
+    <p class="muted" style="font-size:.9rem">${fr.length?"Friends get the invite right here in the app. You'll also get a link you can text to anyone.":"You'll get an invite link to text your friend."}</p>
+  </section>`;
+}
+function readPickForm(){
+  const f=document.getElementById("newform");if(!f)return;
+  pick.type=f.type.value||"u2";pick.tilt=!!(f.tilt&&f.tilt.checked);pick.zip=!!(f.zip&&f.zip.checked);
+  pick.sym=+((f.sym&&f.sym.value)||1);pick.first=+((f.first&&f.first.value)||1);pick.to=f.to?f.to.value:"";pick.to2=f.to2?f.to2.value:"";
+  lsSet("u2-pick",JSON.stringify({type:pick.type,tilt:pick.tilt,zip:pick.zip,sym:pick.sym,first:pick.first}));
+}
+function renderMenu(){
+  const active=games.filter(g=>!info(g).over).sort((a,b)=>(info(b).myTurn-info(a).myTurn)||(new Date(b.t)-new Date(a.t)));
+  const done=games.filter(g=>info(g).over);
+  const fr=friends();needProfiles(fr);
+  const cur=games.find(g=>g.id===curId);
+  const askPhone=!me.phone&&lsGet("u2-phone-skip","0")!=="1";
+  app.innerHTML=`<div class="stack" style="gap:20px">
+    <div class="topbar">${cur?`<button class="btn ghost small" data-act="back">← Back to game</button>`:`<span></span>`}<button class="avbtn" data-act="profile" aria-label="Your profile">${avHTML(uid)}</button></div>
+    <h1>Ultimate<sup>2</sup></h1>
+    ${joinPickHTML()}
+    ${askPhone?`<div class="banner stack" style="gap:8px"><p><b>Highly recommended:</b> add your phone number so your friends' Text buttons go straight to you.</p><div class="row"><button class="btn small" data-act="profile">Add number</button><button class="btn ghost small" data-act="phone-skip">Not now</button></div></div>`:""}
+    ${invites.length?`<section class="stack" style="gap:10px"><p class="label">Game invites</p>${invites.map(i=>`<div class="card invite-card stack" style="gap:10px">
+      <div class="left row">${avHTML(i.from)}<p><b>${esc(dispName(i.from))}</b> invited you to <b>${nameHTML(i.v)}</b></p></div>
+      <div class="row"><button class="btn small" data-act="inv-yes" data-id="${esc(i.id)}" data-g="${esc(i.game)}">Join game</button><button class="btn ghost small" data-act="inv-no" data-id="${esc(i.id)}">No thanks</button></div></div>`).join("")}</section>`:""}
+    ${newGameHTML(fr)}
+    <section class="stack" style="gap:10px"><p class="label">Your games</p>
+      ${active.length?`<div class="gamelist">${active.map(gameRow).join("")}</div>`:`<div class="empty">No games going right now. Start one above.</div>`}</section>
+    ${fr.length?`<section class="card stack" style="gap:4px"><p class="label">Friends</p>${fr.map(id=>`<div class="friendrow"><span class="left">${avHTML(id)}${esc(dispName(id))}</span><button class="btn ghost small" data-act="challenge" data-id="${esc(id)}">New game</button></div>`).join("")}</section>`:""}
+    <div class="row"><button class="btn ghost" data-act="history">Game history and stats${done.length?` (${done.length})`:""}</button></div>
+  </div>`;
+}
+
+/* ----- history + stats ----- */
+function renderHistory(){
+  const done=games.filter(g=>info(g).over).sort((a,b)=>new Date(b.t)-new Date(a.t));
+  const tally=()=>({win:0,loss:0,tie:0});const all=tally(),byOpp={},byType={};
+  for(const g of done){const f=info(g);if(!f.result||!f.mySym)continue;all[f.result]++;
+    const t=variantName(g.v);(byType[t]=byType[t]||tally())[f.result]++;
+    for(const p of f.others)(byOpp[p]=byOpp[p]||tally())[f.result]++;}
+  needProfiles(Object.keys(byOpp));
+  const table=(title,rows)=>rows.length?`<section class="card stack" style="gap:8px"><p class="label">${title}</p><div class="tablewrap"><table class="stats"><thead><tr><th></th><th class="n">Won</th><th class="n">Lost</th><th class="n">Tied</th></tr></thead><tbody>
+    ${rows.map(([n,t])=>`<tr><td>${n}</td><td class="n">${t.win}</td><td class="n">${t.loss}</td><td class="n">${t.tie}</td></tr>`).join("")}</tbody></table></div></section>`:"";
+  app.innerHTML=`<div class="stack" style="gap:18px">
+    ${topbar("menu")}
+    <h2>History and stats</h2>
+    ${done.length?"":`<div class="empty">No finished games yet. Finished games and your record show up here.</div>`}
+    ${done.length?table("Overall",[["All games",all]]):""}
+    ${table("Against each player",Object.entries(byOpp).map(([id,t])=>[`<span class="row" style="gap:8px">${avHTML(id,"sm")}${esc(dispName(id))}</span>`,t]))}
+    ${table("By game type",Object.entries(byType).map(([n,t])=>[esc(n).replace("²",`<span class="sq">2</span>`).replace("³",`<span class="sq">3</span>`),t]))}
+    ${done.length?`<section class="stack" style="gap:10px"><p class="label">Finished games</p><div class="gamelist">${done.map(gameRow).join("")}</div><p class="muted" style="font-size:.9rem">Open a game to replay it move by move or save it as a picture or GIF.</p></section>`:""}
+  </div>`;
+}
+
+/* ===================== boards ===================== */
+/* --- Ultimate / Ultimate² --- */
+function wlineSVG(line,owner){
+  if(!line)return"";const a=line[0],b=line[2],ax=a%3+.5,ay=Math.floor(a/3)+.5,bx=b%3+.5,by=Math.floor(b/3)+.5;
+  const dx=bx-ax,dy=by-ay,len=Math.hypot(dx,dy),ex=dx/len*.38,ey=dy/len*.38;
+  return`<svg class="wline" viewBox="0 0 3 3" aria-hidden="true"><line x1="${ax-ex}" y1="${ay-ey}" x2="${bx+ex}" y2="${by+ey}" stroke="var(--ink)" stroke-width=".2" opacity=".55"/><line x1="${ax-ex}" y1="${ay-ey}" x2="${bx+ex}" y2="${by+ey}" stroke="${SYMCOLOR[owner]}" stroke-width=".11"/></svg>`;
+}
+function boardHTML(st,prefix,o){
+  const{V,R}=st,L=V.L,d=prefix.length;
+  if(d===L){
+    const i=idOf(prefix,L),v=R[L][i],key=encMove(V.v,i),can=o.canShow&&legalU(st,i),lg=can&&o.canPlay;
+    const rot=rotOf(V,prefix.slice(0,-1));
+    const cls=["cell"];if(can)cls.push("can");if(lg)cls.push("legal");if(i===st.last)cls.push("last");if(key===sel)cls.push("sel");if(key===animKey)cls.push("fresh");
+    const inner=v?mark(v,o.w,rot):(key===sel?mark(st.turn,o.w,rot):"");
+    return`<button class="${cls.join(" ")}" data-act="cell" data-m="${key}"${lg?"":` tabindex="-1"`} aria-label="${esc(placeName(V,i))}${v?", "+SYMNAME[v]:""}">${inner}</button>`;
+  }
+  const id=idOf(prefix,d),lv=d+1===L?"lv-low":(d===0?"":"lv-mid");
+  const isRoot=d===o.rootDepth;
+  let h=`<div class="board ${lv}${isRoot?" root "+o.rootClass:""}">`;
+  for(let k=0;k<9;k++)h+=boardHTML(st,prefix.concat(k),o);
+  const r=R[d][id],hasBoardKids=d+1<L;
+  if(r&&d>0)h+=`<div class="over${r===3?" tie":""}${hasBoardKids?" faint":""}">${r===3?"<span>tie</span>":mark(r,1.2,rotOf(V,prefix))}</div>`;
+  if(r===1||r===2)h+=wlineSVG(lineOf(R[d+1].slice(id*9,id*9+9),r,hasBoardKids),r);
+  h+=`</div>`;
+  const tilted=V.tilt&&d>0&&prefix[d-1]===4;
+  return tilted?`<div class="slot">${h}</div>`:h;
+}
+function placeName(V,i){
+  const p=pathOf(i,V.L),parts=[];
+  for(let d=0;d<V.L;d++)parts.push(pretty(POS[visPos(V,p.slice(0,d),p[d])]));
+  if(V.L===4)return`${parts[0]} Ultimate² board · ${parts[1]} ultimate · ${parts[2]} small board · ${parts[3]} square`;
+  return V.L===3?`${parts[0]} ultimate · ${parts[1]} small board · ${parts[2]} square`:`${parts[0]} board · ${parts[1]} square`;
+}
+function describeTarget(st,mine){
+  if(st.kind!=="U")return mine?(st.kind==="INF"?"Tap any square, then press Place. Drag to look around.":"Tap any empty square, then press Place."):"";
+  const V=st.V,t=st.target,w=mine?"You play":"They play";
+  if(!t.length)return V.L===4&&st.n>0?`${w} anywhere on the whole board. The true legendary go anywhere!`:`${w} anywhere on the board.`;
+  const n0=pretty(POS[t[0]]);
+  if(V.L===4){const n1=t.length>1?pretty(POS[visPos(V,[t[0]],t[1])]):"",n2=t.length>2?pretty(POS[visPos(V,[t[0],t[1]],t[2])]):"";
+    if(t.length===1)return`${w} anywhere in the <b>${n0}</b> Ultimate² board.`;
+    if(t.length===2)return`${w} anywhere in the <b>${n1}</b> ultimate board of the <b>${n0}</b> Ultimate² board.`;
+    return`${w} in the <b>${n2}</b> small board of the <b>${n1}</b> ultimate board of the <b>${n0}</b> Ultimate² board.`}
+  if(V.L===2)return`${w} in the <b>${n0}</b> board.`;
+  if(t.length===1)return`${w} anywhere in the <b>${n0}</b> ultimate board.`;
+  return`${w} in the <b>${pretty(POS[visPos(V,[t[0]],t[1])])}</b> small board of the <b>${n0}</b> ultimate board.`;
+}
+function navHTML(st){
+  let h=`<div class="nav" aria-label="Choose an ultimate board">`;
+  for(let u=0;u<9;u++){const cls=[];if(u===zoomU)cls.push("cur");if(!st.big&&st.target[0]===u)cls.push("req");
+    h+=`<button class="${cls.join(" ")}" data-act="zoom" data-u="${u}" aria-label="Zoom to the ${pretty(POS[u])} ultimate board">${st.R[1][u]===3?"tie":mark(st.R[1][u],1.6)}</button>`}
+  return h+`</div>`;
+}
+/* --- simple grids: 3D layers and Trifectacto --- */
+function gridCell(st,i,o,label){
+  const v=st.cells[i],key=enc2(i),can=o.canShow&&legalMove(st,i),lg=can&&o.canPlay,win=st.winCells.includes(i);
+  const cls=["cell"];if(lg)cls.push("legal");if(i===st.last)cls.push("last");if(key===sel)cls.push("sel");if(key===animKey)cls.push("fresh");if(win)cls.push("win");
+  const inner=v===4?`<span class="wild">A</span>`:v?mark(v,1.6):(key===sel?mark(st.turn,1.6):"");
+  return`<button class="${cls.join(" ")}" data-act="cell" data-m="${key}"${lg?"":` tabindex="-1"`} aria-label="${esc(label)}${v?", "+SYMNAME[v]:""}">${inner}</button>`;
+}
+const C3NAME=i=>`layer ${Math.floor(i/16)+1}, row ${Math.floor(i%16/4)+1}, column ${i%4+1}`;
+function layersHTML(st,o){
+  let h=`<div class="layers">`;
+  for(let z=0;z<4;z++){h+=`<div class="layer"><span class="label">Layer ${z+1}${z===0?" (top)":z===3?" (bottom)":""}</span><div class="grid4 ${o.free?"":""}">`;
+    for(let k=0;k<16;k++)h+=gridCell(st,z*16+k,o,C3NAME(z*16+k));h+=`</div></div>`}
+  return h+`</div>`;
+}
+function t3HTML(st,o){let h=`<div class="grid5">`;for(let i=0;i<25;i++)h+=gridCell(st,i,o,`row ${Math.floor(i/5)+1}, column ${i%5+1}`);return h+`</div>`}
+
+/* --- 3D cube view (drawn on a canvas; also used for pictures and GIFs) --- */
+const C3XYZ=i=>({x:i%4,y:Math.floor(i%16/4),z:Math.floor(i/16)});
+function cubeProject(yaw,pitch,W,H){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),f=Math.min(W,H)*1.2,dist=9;
+  return(X,Y,Z)=>{ // X right, Y up, Z toward viewer before rotation
+    let x=X*cy+Z*sy,z=-X*sy+Z*cy,y=Y;
+    const y2=y*cp-z*sp,z2=y*sp+z*cp;
+    const s=f/(dist-z2);return{x:W/2+x*s,y:H/2-y2*s,s,z:z2};
+  };
+}
+function cubePos(i){const c=C3XYZ(i);return[c.x-1.5,(1.5-c.z)*1.25,c.y-1.5]} // layers stacked with a little air between
+function drawCube(ctx,st,W,H,yaw,pitch,col,showLegal){
+  const P=cubeProject(yaw,pitch,W,H);
+  ctx.fillStyle=col.paper2;ctx.fillRect(0,0,W,H);
+  // layer outlines + grid
+  for(let z=0;z<4;z++){const Y=(1.5-z)*1.25;ctx.lineWidth=1;
+    for(let k=0;k<=4;k++){const a=k-2;
+      const l1=[P(a,Y,-2),P(a,Y,2)],l2=[P(-2,Y,a),P(2,Y,a)];
+      ctx.strokeStyle=k===0||k===4?col.gs:col.grid;for(const[p,q]of[l1,l2]){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke()}}}
+  // corner posts
+  ctx.strokeStyle=col.grid;for(const[a,b]of[[-2,-2],[2,-2],[-2,2],[2,2]]){const p=P(a,1.5*1.25,b),q=P(a,-1.5*1.25,b);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke()}
+  // pieces, far to near
+  const items=[];for(let i=0;i<64;i++){const v=st.cells[i];const[X,Y,Z]=cubePos(i);const p=P(X,Y,Z);
+    const legalHere=showLegal&&!v&&legalMove(st,i);if(v||i===st.last||legalHere||enc2(i)===sel)items.push({i,v,p,legalHere})}
+  items.sort((a,b)=>a.p.z-b.p.z);
+  for(const it of items){const r=it.p.s*.32;
+    if(st.winCells.includes(it.i)||it.i===st.last||enc2(it.i)===sel){ctx.fillStyle=col.hl;ctx.beginPath();ctx.arc(it.p.x,it.p.y,r*1.25,0,7);ctx.fill()}
+    if(it.v)canvasMark(ctx,it.v,it.p.x,it.p.y,r,Math.max(1.5,r*.32),col);
+    else if(it.legalHere){ctx.fillStyle=col.gs;ctx.beginPath();ctx.arc(it.p.x,it.p.y,Math.max(1.5,r*.18),0,7);ctx.fill()}
+    else if(enc2(it.i)===sel)canvasMark(ctx,st.turn,it.p.x,it.p.y,r,Math.max(1.5,r*.32),col,.5)}
+  if(st.winCells.length===4){const a=P(...cubePos(st.winCells[0])),b=P(...cubePos(st.winCells[3]));
+    ctx.lineCap="round";ctx.strokeStyle=col.ink;ctx.globalAlpha=.5;ctx.lineWidth=Math.max(4,a.s*.2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.globalAlpha=1;ctx.strokeStyle=st.winners[0]===1?col.x:col.o;ctx.lineWidth=Math.max(2.5,a.s*.1);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  return P;
+}
+function cubeHTML(){return`<div class="infwrap"><canvas id="cubecv" style="width:100%;aspect-ratio:1;border:3px solid var(--ink);border-radius:6px;touch-action:none;display:block" aria-label="3D view of the cube. Drag to turn it."></canvas>
+  <div class="row"><button class="btn ghost small" data-act="cube-spin">${cubeSpin?"Stop spinning":"Spin"}</button><button class="btn ghost small" data-act="cube-reset">Reset view</button><span class="muted" style="font-size:.9rem">Drag to turn. Tap a dot to pick a square.</span></div></div>`}
+function paintCube(){
+  const cv=document.getElementById("cubecv");if(!cv)return;
+  const g=games.find(x=>x.id===curId);if(!g)return;const f=info(g,replayK);
+  const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;if(!W)return;
+  if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  cv._P=drawCube(ctx,f.st,W,H,cubeYaw,cubePitch,liveColors(),f.myTurn&&replayK==null&&!busy);
+}
+function paintU3(st){ // the whole Ultimate³ board as one picture (6,561 squares is too many buttons for a phone)
+  const cv=document.getElementById("u3cv");if(!cv)return;const dpr=window.devicePixelRatio||1,W=cv.clientWidth;if(!W)return;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(W*dpr);const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  const col=liveColors();drawU(ctx,st,[],W,0,col);
+  const t=st.target;if(t.length&&!st.big){const gap=W*.012,cs=(W-2*gap)/3,x=(t[0]%3)*(cs+gap),y=Math.floor(t[0]/3)*(cs+gap);
+    ctx.globalAlpha=.28;ctx.fillStyle=col.hl;ctx.fillRect(x,y,cs,cs);ctx.globalAlpha=1;ctx.strokeStyle=col.hl;ctx.lineWidth=Math.max(3,W*.008);ctx.strokeRect(x+1.5,y+1.5,cs-3,cs-3)}
+}
+function cubeLoop(){cancelAnimationFrame(cubeRAF);if(!cubeSpin)return;const step=()=>{if(!cubeSpin||!document.getElementById("cubecv"))return;cubeYaw+=.012;paintCube();cubeRAF=requestAnimationFrame(step)};cubeRAF=requestAnimationFrame(step)}
+
+/* --- Infinite board (SVG with drag and pinch) --- */
+function infRegion(st){
+  let x0=-4,x1=3,y0=-4,y1=3;for(const k of st.cells.keys()){const[x,y]=k.split(",").map(Number);x0=Math.min(x0,x-4);x1=Math.max(x1,x+4);y0=Math.min(y0,y-4);y1=Math.max(y1,y+4)}
+  return{x0,x1,y0,y1};
+}
+function infHTML(){return`<div class="infwrap"><svg id="infsvg" aria-label="Infinite board. Drag to move around."></svg>
+  <div class="row"><button class="btn ghost small" data-act="inf-zoom" data-z="1.25" aria-label="Zoom in">+</button><button class="btn ghost small" data-act="inf-zoom" data-z="0.8" aria-label="Zoom out">−</button><button class="btn ghost small" data-act="inf-center">Center</button></div></div>`}
+function infState(gid,st){
+  let v=infView[gid];
+  if(!v){const R=infRegion(st);v=infView[gid]={cx:st.lastXY?st.lastXY[0]+.5:(R.x0+R.x1+1)/2,cy:st.lastXY?st.lastXY[1]+.5:(R.y0+R.y1+1)/2,cells:11}}
+  return v;
+}
+function paintInf(){
+  const svg=document.getElementById("infsvg");if(!svg)return;
+  const g=games.find(x=>x.id===curId);if(!g)return;const f=info(g,replayK),st=f.st,v=infState(g.id,st),R=infRegion(st);
+  const n=v.cells,x0=v.cx-n/2,y0=v.cy-n/2;svg.setAttribute("viewBox",`${x0} ${y0} ${n} ${n}`);
+  const vx0=Math.floor(x0)-1,vx1=Math.ceil(x0+n)+1,vy0=Math.floor(y0)-1,vy1=Math.ceil(y0+n)+1;
+  const ax0=Math.max(vx0,R.x0),ax1=Math.min(vx1,R.x1+1),ay0=Math.max(vy0,R.y0),ay1=Math.min(vy1,R.y1+1);
+  let h=`<rect x="${R.x0}" y="${R.y0}" width="${R.x1-R.x0+1}" height="${R.y1-R.y0+1}" fill="var(--paper)"/>`;
+  const sw=Math.max(.02,n/400);
+  for(let x=ax0;x<=ax1;x++)h+=`<line x1="${x}" y1="${Math.max(R.y0,ay0)}" x2="${x}" y2="${Math.min(R.y1+1,ay1)}" stroke="var(--grid)" stroke-width="${sw}"/>`;
+  for(let y=ay0;y<=ay1;y++)h+=`<line x1="${Math.max(R.x0,ax0)}" y1="${y}" x2="${Math.min(R.x1+1,ax1)}" y2="${y}" stroke="var(--grid)" stroke-width="${sw}"/>`;
+  const markAt=(p,x,y,op=1)=>`<g transform="translate(${x} ${y}) scale(.1)" opacity="${op}">${mark(p,1.6).replace(/<\/?svg[^>]*>/g,"")}</g>`;
+  for(const k of st.winCells)h+=`<rect x="${k.split(",")[0]}" y="${k.split(",")[1]}" width="1" height="1" fill="var(--hl)"/>`;
+  if(st.lastXY)h+=`<rect x="${st.lastXY[0]+.06}" y="${st.lastXY[1]+.06}" width=".88" height=".88" fill="none" stroke="var(--ink)" stroke-width=".07" opacity=".6"/>`;
+  for(const[k,p]of st.cells){const[x,y]=k.split(",").map(Number);if(x<vx0||x>vx1||y<vy0||y>vy1)continue;h+=markAt(p,x,y)}
+  if(sel){const[sx,sy]=decMoves("inf",sel)[0];h+=`<rect x="${sx}" y="${sy}" width="1" height="1" fill="var(--hl)" opacity=".8"/>`+markAt(st.turn,sx,sy,.6)}
+  if(st.winCells.length){const pts=st.winCells.map(k=>k.split(",").map(Number)).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const a=pts[0],b=pts[pts.length-1];
+    h+=`<line x1="${a[0]+.5}" y1="${a[1]+.5}" x2="${b[0]+.5}" y2="${b[1]+.5}" stroke="${SYMCOLOR[st.winners[0]]}" stroke-width=".14" stroke-linecap="round"/>`}
+  svg.innerHTML=h;svg._R=R;
+}
+
+/* ===================== game screen ===================== */
+function playersHTML(g,f){
+  const any=f.syms.some(s=>f.seats[s]&&bubbleFor(g.id,f.seats[s]));
+  return`<div class="players${any?" has-bubble":""}">${f.syms.map(s=>{const p=f.seats[s];
+    return`<span class="pl${!f.over&&f.turn===s?" turn":""}">${p?bubbleFor(g.id,p):""}${mark(s,1.6)}${p?avHTML(p)+esc(who(p)):`<span class="muted">Open seat</span>`}</span>`}).join("")}</div>`;
+}
+function statusText(g,f){
+  const nm=p=>p===uid?"You":dispName(p);
+  if(g.q&&replayK==null){const q=g.q===uid?"You":dispName(g.q);return f.result==="win"?`${q} resigned. You win!`:f.result==="tie"?`${q} resigned. It's a tie.`:`${q} resigned.`}
+  if(f.over){if(f.result==="win")return f.winners.length>1?"It's a tie between you and "+f.winners.map(s=>f.seats[s]).filter(p=>p!==uid).map(nm).join(" & ")+".":"You won!";
+    if(f.winners.length===0)return"It's a tie.";
+    if(f.winners.length>1)return`${f.winners.map(s=>nm(f.seats[s])).join(" and ")} tie. You lost.`;
+    return`${nm(f.seats[f.winners[0]])} won.`}
+  if(!f.turnPlayer)return`Waiting for someone to join as ${SYMNAME[f.turn]}`;
+  return f.myTurn?"Your turn":`${dispName(f.turnPlayer)}'s turn`;
+}
+function renderGame(){
+  const g=games.find(x=>x.id===curId);
+  const full=info(g),f=replayK==null?full:info(g,replayK),st=f.st,kind=st.kind;
+  const key=g.id+":"+full.st.n;
+  if(key!==seenKey){const[pid,pn]=seenKey.split(":");
+    const moves=decMoves(g.v,g.m);animKey=(pid===g.id&&+pn===full.st.n-1&&moves.length)?encMove(g.v,moves[moves.length-1]):null;
+    seenKey=key;sel=null;zoomU=null;zoom4=[];if(kind==="INF"&&pid===g.id&&full.st.lastXY){const v=infView[g.id];if(v){v.cx=full.st.lastXY[0]+.5;v.cy=full.st.lastXY[1]+.5}}}
+  needProfiles(coPlayersAll(g));
+  subscribeChat(g.id);const ch=chats[g.id];if(!ch)loadChat(g.id);
+  const canPlay=replayK==null&&f.myTurn&&!busy,opts={canShow:replayK==null&&!f.over,canPlay,free:kind==="U"&&!st.target.length};
+  let boardArea;
+  if(kind==="U"&&st.V.L===4){
+    const V=st.V,t=st.target,o={...opts,w:2,rootDepth:0,rootClass:"big-root"};
+    const toTarget=t.length?[t[0]]:(st.last>=0?[pathOf(st.last,4)[0]]:[4]);
+    const z=zoom4,label=z.length===0?"Whole board · tap an Ultimate² board to zoom in":z.length===1?`Zoomed: ${pretty(POS[z[0]])} Ultimate² board`:`Zoomed: ${pretty(POS[visPos(V,[z[0]],z[1])])} ultimate board of the ${pretty(POS[z[0]])} Ultimate² board`;
+    const deeper=z.length===1?(t.length>=2&&t[0]===z[0]?[z[0],t[1]]:[z[0],4]):null;
+    const bar=`<div class="boardbar"><span class="label">${esc(label)}</span><div class="row">
+      ${z.length===0?`<button class="btn ghost small" data-act="zoom4" data-p="${toTarget.join(",")}">${t.length?"Zoom to where you play":"Zoom in"}</button>`:""}
+      ${deeper?`<button class="btn ghost small" data-act="zoom4" data-p="${deeper.join(",")}">Zoom in more</button>`:""}
+      ${z.length===2?`<button class="btn ghost small" data-act="zoom4" data-p="${z[0]}">Zoom out</button>`:""}
+      ${z.length?`<button class="btn ghost small" data-act="zoom4" data-p="">Whole board</button>`:""}</div></div>`;
+    const nav=z.length?`<div class="row"><div class="nav" aria-label="Choose a board">${[...Array(9).keys()].map(k=>{const pth=z.length===1?[k]:[z[0],k],r=z.length===1?st.R[1][k]:st.R[2][z[0]*9+k];
+      const req=t.length>=pth.length&&pth.every((x,i)=>t[i]===x),cur=pth.every((x,i)=>z[i]===x);
+      return`<button class="${cur?"cur ":""}${req?"req":""}" data-act="zoom4" data-p="${pth.join(",")}" aria-label="Zoom to the ${pretty(POS[k])} ${z.length===1?"Ultimate²":"ultimate"} board">${r===3?"tie":mark(r,1.6)}</button>`}).join("")}</div>
+      <span class="muted" style="font-size:.9rem;max-width:30ch">Tap a spot to jump to a different ${z.length===1?"Ultimate²":"ultimate"} board.</span></div>`:"";
+    boardArea=bar+(z.length===0?`<canvas id="u3cv" style="width:min(100%,640px);aspect-ratio:1;display:block;border-radius:5px;cursor:zoom-in" aria-label="The whole Ultimate³ board. Tap an Ultimate² board to zoom in."></canvas>`
+      :`<div class="${opts.free?"free":""}"><div class="zoomwrap${z.length===1?" big":""}">${boardHTML(st,z,{...o,w:z.length===1?2:1.6,rootDepth:z.length,rootClass:z.length===1?"big-root":"small-root"})}</div></div>`)+nav;
+  }else if(kind==="U"){
+    const V=st.V,o={...opts,w:V.L===3?2:1.6,rootDepth:0,rootClass:V.L===3?"big-root":"small-root"};
+    const zoomTo=st.target.length?st.target[0]:(st.last>=0?pathOf(st.last,V.L)[0]:4);
+    const bar=V.L===3?`<div class="boardbar">${zoomU===null?`<span class="label">Whole board</span><button class="btn ghost small" data-act="zoom" data-u="${zoomTo}">Zoom in</button>`
+      :`<span class="label">Zoomed: ${pretty(POS[zoomU])} ultimate board</span><button class="btn ghost small" data-act="whole">Whole board</button>`}</div>`:"";
+    boardArea=bar+(V.L===3&&zoomU!==null?`<div class="${opts.free?"free":""}"><div class="zoomwrap">${boardHTML(st,[zoomU],{...o,w:1.6,rootDepth:1,rootClass:"small-root"})}</div></div>
+      <div class="row">${navHTML(st)}<span class="muted" style="font-size:.9rem;max-width:30ch">Tap a spot to zoom to a different ultimate board.</span></div>`
+      :`<div class="${opts.free?"free":""}">${boardHTML(st,[],o)}</div>`);
+  }else if(kind==="C3"){
+    boardArea=`<div class="seg" role="radiogroup" aria-label="3D view">${[["layers","Layers"],["cube","Cube"]].map(([k,l])=>`<label class="opt"><input type="radio" name="view3d" value="${k}"${view3d===k?" checked":""}><span><b>${l}</b></span></label>`).join("")}</div>`
+      +(view3d==="cube"?cubeHTML():layersHTML(st,opts));
+  }else if(kind==="T3")boardArea=t3HTML(st,opts);
+  else boardArea=infHTML();
+  const placeLabel=sel?(kind==="U"?placeName(st.V,decMoves(g.v,sel)[0]):kind==="C3"?C3NAME(decMoves(g.v,sel)[0]):kind==="T3"?(i=>`row ${Math.floor(i/5)+1}, column ${i%5+1}`)(decMoves(g.v,sel)[0]):"the highlighted square"):"";
+  const fr=friends().filter(p=>!coPlayersAll(g).includes(p));
+  const invite=full.empty.length&&!full.over&&full.mySym?`<section class="card stack" style="gap:10px"><p><b>Invite ${full.empty.length>1?"two people":"someone"}.</b> Text them this link. When they tap it and sign in, they join this game.</p>
+    <input class="link" id="invitebox" readonly value="${esc(inviteLink(g.id))}" aria-label="Invite link">
+    <div class="row"><a class="btn" href="${esc(smsHref(`Play ${variantName(g.v)} with me! ${inviteLink(g.id)}`))}">Text the invite</a><button class="btn ghost" data-act="copy-invite">Copy link</button></div>
+    ${fr.length?`<div class="row"><select id="invite-to" aria-label="Friend to invite">${fr.map(id=>`<option value="${esc(id)}">${esc(dispName(id))}</option>`).join("")}</select><button class="btn ghost small" data-act="send-invite">Invite in the app</button></div>`:""}
+    ${full.turnPlayer===uid&&full.st.n===0?`<p class="muted">You go first, so you can make the first move while you wait.</p>`:""}</section>`:"";
+  const tp=full.turnPlayer,tpName=tp?dispName(tp):"";
+  const nudge=!full.over&&tp&&tp!==uid&&full.mySym?`<button class="btn ghost small" data-act="remind">Remind ${esc(tpName)}</button><a class="btn ghost small" href="${esc(smsHref(`Your move in ${variantName(g.v)}! ${gameLink(g.id)}`,getPhone(tp)))}">Text ${esc(tpName)}</a>`:"";
+  const others=coPlayersAll(g).filter(p=>p!==uid);
+  const again=others.length?`<button class="btn ghost small" data-act="challenge" data-id="${esc(others[0])}"${others[1]?` data-id2="${esc(others[1])}"`:""}>New game with ${esc(others.map(dispName).join(" & "))}</button>`:"";
+  const nMoves=full.st.n,c=chats[g.id]||{msgs:[]},unread=unreadChat(g)||(c.msgs.length&&c.lastId>+lsGet("u2-read-"+g.id,"0")&&c.msgs[c.msgs.length-1].player!==uid);
+  const total=kind==="U"?9**st.V.L:kind==="C3"?64:kind==="T3"?24:null;
+  app.innerHTML=`<div class="stack">
+    ${topbar()}
+    ${invite}
+    <p class="vname">${nameHTML(g.v)}</p>
+    ${playersHTML(g,f)}
+    <p class="status" aria-live="polite">${esc(statusText(g,f))}</p>
+    ${replayK==null&&!f.over?`<p class="where">${describeTarget(st,f.myTurn)}</p>`:""}
+    ${replayK!=null?`<section class="card stack" style="gap:8px"><p class="label">Replay: move ${replayK} of ${nMoves}</p><div class="replaybar">
+      <button class="btn ghost small" data-act="rp" data-k="0" aria-label="First move">⏮</button><button class="btn ghost small" data-act="rp" data-k="${replayK-1}" aria-label="Back one move">◀</button>
+      <button class="btn small" data-act="rp-play">${replayTimer?"Pause":"Play"}</button>
+      <button class="btn ghost small" data-act="rp" data-k="${replayK+1}" aria-label="Forward one move">▶</button><button class="btn ghost small" data-act="rp" data-k="${nMoves}" aria-label="Last move">⏭</button>
+      <input type="range" id="rp-range" min="0" max="${nMoves}" value="${replayK}" aria-label="Move number"><button class="btn ghost small" data-act="rp-exit">Done</button></div></section>`:""}
+    ${boardArea}
+    <div class="confirm">${sel&&replayK==null?`<button class="btn" data-act="place"${busy?" disabled":""}>Place ${SYMNAME[f.turn]} here</button><button class="btn ghost" data-act="cancel">Cancel</button><span class="muted" style="font-size:.9rem">${esc(placeLabel)}</span>`:(canPlay&&kind!=="INF"&&!(kind==="C3"&&view3d==="cube")?`<span class="muted">Tap a highlighted square, then press Place.</span>`:"")}</div>
+    <div class="row">${nudge}<button class="btn ghost small" data-act="chat">Chat${unread?`<span class="badge">!</span>`:""}</button></div>
+    ${chatOpen?chatHTML(g):""}
+    <div class="legend">${kind==="U"?`<span><i class="sw" style="background:var(--hl)"></i>where to play</span>`:""}<span>${nMoves} move${nMoves===1?"":"s"}${total?` of ${total} squares`:""}</span></div>
+    <div class="row">${nMoves&&replayK==null?`<button class="btn ghost small" data-act="rp-start">Replay moves</button>`:""}<button class="btn ghost small" data-act="save-open">Save picture or GIF</button>${again}</div>
+    ${saveOpen?saveHTML(g):""}
+    ${preview?`<section class="card stack preview" style="gap:10px"><p><b>${preview.kind==="gif"?"Your GIF":"Your picture"} is ready.</b> Tap Share to save it to Photos or send it, or press and hold the picture.</p><img src="${preview.url}" alt="Saved game ${preview.kind}"><div class="row"><button class="btn" data-act="share-file">Share or save</button><button class="btn ghost small" data-act="preview-close">Close</button></div></section>`:""}
+    ${full.over||!full.mySym?"":`<div class="row">${confirmResign?`<span>Resign this game?</span><button class="btn small" data-act="resign-yes">Yes, resign</button><button class="btn ghost small" data-act="resign-no">Keep playing</button>`:`<button class="btn ghost small" data-act="resign">Resign</button>`}</div>`}
+    ${rulesHTML(g.v)}
+  </div>`;
+  if(kind==="INF")paintInf();
+  if(kind==="C3"&&view3d==="cube"){paintCube();cubeLoop()}
+  if(kind==="U"&&st.V.L===4&&!zoom4.length)paintU3(st);
+  if(chatOpen){const log=document.getElementById("chatlog");if(log)log.scrollTop=log.scrollHeight}
+}
+function chatHTML(g){
+  const c=chats[g.id]||{msgs:[]};
+  return`<section class="card chatpanel"><div class="row" style="justify-content:space-between"><p class="label">Chat</p><button class="btn ghost small" data-act="chat">Close</button></div>
+    <div class="chatlog" id="chatlog">${c.msgs.length?c.msgs.map(m=>`<div class="msg${m.player===uid?" mine":""}">${avHTML(m.player,"sm")}<div><div class="who">${esc(who(m.player))} · ${new Date(m.created).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</div><div class="txt">${esc(m.body)}</div></div></div>`).join(""):`<p class="muted">No messages yet. Say hi.</p>`}</div>
+    <form id="chatform"><input type="text" id="chat-text" maxlength="300" placeholder="Message" autocomplete="off" aria-label="Message"><button class="btn small" type="submit">Send</button></form></section>`;
+}
+function saveHTML(g){
+  const is3=kindOf(g.v)==="C3",n=decMoves(g.v,g.m).length;
+  const r=(name,val,label,cur)=>`<label class="opt"><input type="radio" name="${name}" value="${val}"${cur?" checked":""}><span><b>${label}</b></span></label>`;
+  return`<section class="card stack" style="gap:12px"><h2>Save picture or GIF</h2>
+    <form id="saveform">
+      ${is3?`<p class="label">Show it as</p><div class="seg">${r("look","layers","Layers side by side",lsGet("u2-look","layers")==="layers")}${r("look","cube","3D cube",lsGet("u2-look","layers")==="cube")}</div>
+      <p class="label">Cube GIF style</p><div class="seg">${r("spin","still","Still",lsGet("u2-spin","spin")==="still")}${r("spin","spin","Spinning as moves appear",lsGet("u2-spin","spin")==="spin")}${r("spin","spinfull","Spinning, finished board",lsGet("u2-spin","spin")==="spinfull")}</div>`:""}
+      <div class="row"><button class="btn" type="submit" name="what" value="png">Make picture</button>${n>1?`<button class="btn ghost" type="submit" name="what" value="gif">Make GIF (moves play out)</button>`:""}<button class="btn ghost small" type="button" data-act="save-open">Close</button></div>
+    </form><p class="muted" style="font-size:.9rem">Includes everyone's names and symbols, the game type and the result.</p></section>`;
+}
+
+function render(){
+  if(!B)return;
+  if(!authReady){app.innerHTML=`<p class="muted">Loading…</p>`;return}
+  if(!uid)return renderAuth();
+  if(!me||!gamesLoaded){app.innerHTML=`<p class="muted">Loading your games…</p>`;return}
+  setBadge();
+  if(screen==="profile")return renderProfile();
+  if(screen==="history")return renderHistory();
+  if(screen==="menu"||!games.some(g=>g.id===curId))return renderMenu();
+  renderGame();
+}
+
+/* ===================== actions ===================== */
+function stopReplay(){clearInterval(replayTimer);replayTimer=null}
+function openGame(id,remember=true){
+  curId=id;screen="game";zoomU=null;zoom4=[];sel=null;seenKey="";confirmResign=false;stopReplay();replayK=null;chatOpen=false;preview=null;saveOpen=false;cubeSpin=false;
+  if(remember)B.open(id).catch(()=>{});
+  render();window.scrollTo(0,0);
+}
+async function route(){
+  if(pendingJoin){
+    const t=pendingJoin;pendingJoin=null;try{sessionStorage.removeItem("u2-join")}catch(e){}
+    if(!games.some(g=>g.id===t)){await doJoin(t,null,null);return}
+    openGame(t);return;
+  }
+  if(pendingOpen){const t=pendingOpen;pendingOpen=null;if(games.some(g=>g.id===t)){openGame(t);return}}
+  if(!curId){
+    const recent=games.find(g=>g.id===me.game)||games.find(g=>!info(g).over)||games[0];
+    if(recent)openGame(recent.id,false);else{screen="menu";render()}
+  }
+}
+async function startGame(){
+  if(busy)return;readPickForm();
+  const v=pickV();busy=true;render();
+  try{
+    const gid=await B.createGame(v,pick.sym,pick.first);
+    const sent=[];
+    for(const to of[pick.to,pick.to2].filter((x,i,a)=>x&&a.indexOf(x)===i)){try{await B.invite(gid,to);sent.push(dispName(to));B.notify("invite",gid,{to}).catch(()=>{})}catch(e){}}
+    if(sent.length)toast(`Invite sent to ${sent.join(" and ")}.`);
+    pick.to="";pick.to2="";
+    await watcher.reload();busy=false;openGame(gid,false);
+  }catch(e){busy=false;toast("Couldn't start a game. Check your connection.");render()}
+}
+function place(){
+  const g=games.find(x=>x.id===curId),f=info(g);if(!sel)return;
+  const m=decMoves(g.v,sel)[0];
+  if(!f.myTurn||!legalMove(f.st,m)){sel=null;render();return}
+  const newM=g.m+sel,after=replayGame({...g,m:newM});
+  busy=true;sel=null;g.m=newM;render();
+  B.move(g.id,newM).then(()=>{busy=false;watcher.reload();B.notify("move",g.id,{over:after.over}).catch(()=>{})},
+    e=>{busy=false;watcher.reload();toast(e&&e.code==="not_your_turn"?"It's not your turn.":e&&e.code==="game_over"?"This game is over.":"That move didn't save. Check your connection and try again.")});
+  const next=after.over?null:seatsOf(g)[after.turn];
+  const target=next&&next!==uid?next:coPlayersAll(g).find(p=>p!==uid);
+  if(target&&lsGet("u2-auto","0")==="1")location.href=smsHref(after.over?`Game over in ${variantName(g.v)}! Come see the final board: ${gameLink(g.id)}`:`Your move in ${variantName(g.v)}! ${gameLink(g.id)}`,getPhone(target));
+}
+function tapMove(enc){
+  const g=games.find(x=>x.id===curId);if(!g)return;const f=info(g);
+  if(replayK!=null||!f.myTurn||busy)return;
+  const m=decMoves(g.v,enc)[0];if(!legalMove(f.st,m))return;
+  sel=sel===enc?null:enc;render();
+}
+
+/* ----- pointer handling for the Infinite board and the 3D cube ----- */
+let ptrs=new Map(),gest=null;
+app.addEventListener("pointerdown",e=>{
+  const t=e.target.closest("#infsvg,#cubecv");if(!t)return;
+  t.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1)gest={el:t.id,moved:false,sx:e.clientX,sy:e.clientY,lx:e.clientX,ly:e.clientY,dist:0};
+  else if(ptrs.size===2){const[a,b]=[...ptrs.values()];gest.dist=Math.hypot(a.x-b.x,a.y-b.y);gest.moved=true}
+});
+app.addEventListener("pointermove",e=>{
+  if(!gest||!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const g=games.find(x=>x.id===curId);if(!g)return;
+  if(gest.el==="infsvg"){
+    const svg=document.getElementById("infsvg");if(!svg)return;const v=infView[g.id];if(!v)return;const px=svg.clientWidth/v.cells;
+    if(ptrs.size===2){const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(gest.dist){v.cells=Math.min(60,Math.max(5,v.cells*gest.dist/d))}gest.dist=d;paintInf();return}
+    const dx=e.clientX-gest.lx,dy=e.clientY-gest.ly;gest.lx=e.clientX;gest.ly=e.clientY;
+    if(Math.hypot(e.clientX-gest.sx,e.clientY-gest.sy)>6)gest.moved=true;
+    if(gest.moved){v.cx-=dx/px;v.cy-=dy/px;paintInf()}
+  }else{
+    const dx=e.clientX-gest.lx,dy=e.clientY-gest.ly;gest.lx=e.clientX;gest.ly=e.clientY;
+    if(Math.hypot(e.clientX-gest.sx,e.clientY-gest.sy)>6)gest.moved=true;
+    if(gest.moved){cubeYaw+=dx*.01;cubePitch=Math.max(-1.3,Math.min(1.3,cubePitch+dy*.01));paintCube()}
+  }
+});
+function endPtr(e){
+  if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);
+  if(ptrs.size||!gest)return;const gs=gest;gest=null;if(gs.moved)return;
+  const g=games.find(x=>x.id===curId);if(!g)return;
+  if(gs.el==="infsvg"){
+    const svg=document.getElementById("infsvg"),v=infView[g.id],R=svg&&svg._R;if(!svg||!v||!R)return;
+    const r=svg.getBoundingClientRect(),x=Math.floor(v.cx-v.cells/2+(e.clientX-r.left)/r.width*v.cells),y=Math.floor(v.cy-v.cells/2+(e.clientY-r.top)/r.height*v.cells);
+    if(x<R.x0||x>R.x1||y<R.y0||y>R.y1)return;tapMove(encMove("inf",[x,y]));
+  }else{
+    const cv=document.getElementById("cubecv");if(!cv||!cv._P)return;const r=cv.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+    const f=info(g);let best=null,bd=1e9;
+    for(let i=0;i<64;i++){if(!legalMove(f.st,i))continue;const p=cv._P(...cubePos(i)),d=Math.hypot(p.x-px,p.y-py);if(d<bd&&d<p.s*.45){bd=d;best=i}}
+    if(best!=null)tapMove(enc2(best));
+  }
+}
+app.addEventListener("pointerup",endPtr);app.addEventListener("pointercancel",endPtr);
+app.addEventListener("wheel",e=>{const svg=e.target.closest("#infsvg");if(!svg)return;e.preventDefault();const v=infView[curId];if(!v)return;v.cells=Math.min(60,Math.max(5,v.cells*(e.deltaY>0?1.1:.9)));paintInf()},{passive:false});
+window.addEventListener("resize",()=>{paintInf();paintCube();const g=games.find(x=>x.id===curId);if(g&&/^u3/.test(g.v)&&!zoom4.length)paintU3(info(g,replayK).st)});
+
+/* ===================== pictures and GIFs ===================== */
+const IMGC={paper:"#f2f6f8",paper2:"#e6eef2",grid:"#c4d6e0",gs:"#7f97a6",ink:"#1d2932",muted:"#5b6b76",x:"#c63d2b",o:"#2453b3",s:"#2f8f4e",hl:"#ffe45c",white:"#ffffff"};
+function liveColors(){const cs=getComputedStyle(document.documentElement),g=n=>cs.getPropertyValue(n).trim();
+  return{paper:g("--paper"),paper2:g("--paper-2"),grid:g("--grid"),gs:g("--grid-strong"),ink:g("--ink"),muted:g("--muted"),x:g("--x"),o:g("--o"),s:g("--s")||IMGC.s,hl:g("--hl"),white:"#fff"}}
+function canvasMark(ctx,p,cx,cy,r,w,col,alpha=1){
+  ctx.save();ctx.globalAlpha=alpha;ctx.lineWidth=w;ctx.lineCap="round";ctx.lineJoin="round";
+  if(p===1){ctx.strokeStyle=col.x;ctx.beginPath();ctx.moveTo(cx-r,cy-r);ctx.lineTo(cx+r,cy+r);ctx.moveTo(cx+r,cy-r);ctx.lineTo(cx-r,cy+r);ctx.stroke()}
+  else if(p===2){ctx.strokeStyle=col.o;ctx.beginPath();ctx.arc(cx,cy,r*1.08,0,Math.PI*2);ctx.stroke()}
+  else if(p===3){ctx.strokeStyle=col.s;ctx.beginPath();ctx.moveTo(cx-1.25*r,cy+.55*r);ctx.bezierCurveTo(cx-.85*r,cy-1.0*r,cx-.3*r,cy-1.0*r,cx,cy);ctx.bezierCurveTo(cx+.3*r,cy+1.0*r,cx+.85*r,cy+1.0*r,cx+1.25*r,cy-.55*r);ctx.stroke()}
+  else if(p===4){ctx.fillStyle=col.ink;ctx.font=`bold ${Math.round(r*2.2)}px Helvetica, Arial, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("A",cx,cy+r*.08)}
+  ctx.restore();
+}
+function drawU(ctx,st,prefix,size,rotAcc,col){
+  const{V,R}=st,L=V.L,d=prefix.length;
+  if(d===L){const i=idOf(prefix,L),v=R[L][i];ctx.fillStyle=i===st.last?col.hl:col.paper;ctx.fillRect(0,0,size,size);
+    if(v){ctx.save();ctx.translate(size/2,size/2);ctx.rotate(-rotAcc*Math.PI/4);canvasMark(ctx,v,0,0,size*.28,Math.max(1,size*.11),col);ctx.restore()}return}
+  const gap=d===0?size*.012:(d+1===L?Math.max(.6,size*.012):size*.016);
+  ctx.fillStyle=d===0?col.ink:d+1===L?col.grid:col.gs;ctx.fillRect(0,0,size,size);
+  const cs=(size-2*gap)/3;
+  for(let k=0;k<9;k++){const x=(k%3)*(cs+gap),y=Math.floor(k/3)*(cs+gap),tilted=V.tilt&&k===4&&d+1<L;
+    ctx.save();ctx.translate(x,y);
+    if(tilted){ctx.fillStyle=col.paper;ctx.fillRect(0,0,cs,cs);ctx.translate(cs/2,cs/2);ctx.rotate(Math.PI/4);ctx.scale(Math.SQRT1_2,Math.SQRT1_2);ctx.translate(-cs/2,-cs/2)}
+    drawU(ctx,st,prefix.concat(k),cs,rotAcc+(tilted?1:0),col);ctx.restore()}
+  const id=idOf(prefix,d),r=R[d][id],kidsBoards=d+1<L;
+  if(r&&d>0){if(!kidsBoards){ctx.globalAlpha=.72;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);ctx.globalAlpha=1}
+    ctx.save();ctx.translate(size/2,size/2);ctx.rotate(-rotAcc*Math.PI/4);
+    if(r===3){ctx.fillStyle=col.muted;ctx.font=`bold ${Math.round(size*.22)}px Helvetica, Arial, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("tie",0,0)}
+    else canvasMark(ctx,r,0,0,size*.3,Math.max(1.5,size*.08),col,kidsBoards?.5:1);ctx.restore()}
+  if(r===1||r===2){const l=lineOf(R[d+1].slice(id*9,id*9+9),r,kidsBoards);if(l){const c=k=>[(k%3)*(cs+gap)+cs/2,Math.floor(k/3)*(cs+gap)+cs/2],a=c(l[0]),b=c(l[2]);
+    const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),ex=dx/len*cs*.4,ey=dy/len*cs*.4;ctx.lineCap="round";
+    ctx.strokeStyle=col.ink;ctx.globalAlpha=.5;ctx.lineWidth=Math.max(2,size*.035);ctx.beginPath();ctx.moveTo(a[0]-ex,a[1]-ey);ctx.lineTo(b[0]+ex,b[1]+ey);ctx.stroke();
+    ctx.globalAlpha=1;ctx.strokeStyle=r===1?col.x:col.o;ctx.lineWidth=Math.max(1.2,size*.018);ctx.beginPath();ctx.moveTo(a[0]-ex,a[1]-ey);ctx.lineTo(b[0]+ex,b[1]+ey);ctx.stroke()}}
+}
+function drawGrid(ctx,st,n,cells,size,col,labelFn){ // simple n x n grid (Trifectacto, one 3D layer)
+  const gap=Math.max(1,size*.012);ctx.fillStyle=col.ink;ctx.fillRect(0,0,size,size);const cs=(size-gap*(n+1))/n;
+  for(let k=0;k<n*n;k++){const i=cells[k],x=gap+(k%n)*(cs+gap),y=gap+Math.floor(k/n)*(cs+gap),v=st.cells[i];
+    ctx.fillStyle=st.winCells.includes(i)||i===st.last?col.hl:col.paper;ctx.fillRect(x,y,cs,cs);if(v)canvasMark(ctx,v,x+cs/2,y+cs/2,cs*.28,Math.max(1.2,cs*.1),col)}
+}
+function drawBoardCanvas(ctx,g,st,x,y,size,col,look,yaw){
+  ctx.save();ctx.translate(x,y);
+  if(st.kind==="U")drawU(ctx,st,[],size,0,col);
+  else if(st.kind==="T3")drawGrid(ctx,st,5,[...Array(25).keys()],size,col);
+  else if(st.kind==="C3"){
+    if(look==="cube")drawCube(ctx,st,size,size,yaw,.45,col,false);
+    else{const ls=(size-24)/2;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);
+      for(let z=0;z<4;z++){const lx=(z%2)*(ls+24),ly=Math.floor(z/2)*(ls+24);ctx.fillStyle=col.muted;ctx.font=`bold ${Math.round(size*.03)}px Helvetica, Arial, sans-serif`;ctx.textAlign="left";ctx.textBaseline="alphabetic";
+        ctx.fillText(`Layer ${z+1}`,lx,ly+size*.03);ctx.save();ctx.translate(lx,ly+size*.04);drawGrid(ctx,st,4,[...Array(16).keys()].map(k=>z*16+k),ls-size*.04,col);ctx.restore()}}
+  }else{ // Infinite: the occupied area plus one square around it
+    let x0=0,x1=0,y0=0,y1=0,first=true;for(const k of st.cells.keys()){const[a,b]=k.split(",").map(Number);if(first){x0=x1=a;y0=y1=b;first=false}x0=Math.min(x0,a);x1=Math.max(x1,a);y0=Math.min(y0,b);y1=Math.max(y1,b)}
+    x0-=1;y0-=1;x1+=1;y1+=1;const n=Math.max(x1-x0+1,y1-y0+1,6),cs=size/n;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);
+    ctx.strokeStyle=col.grid;ctx.lineWidth=1;for(let k=0;k<=n;k++){ctx.beginPath();ctx.moveTo(k*cs,0);ctx.lineTo(k*cs,size);ctx.moveTo(0,k*cs);ctx.lineTo(size,k*cs);ctx.stroke()}
+    for(const[k,p]of st.cells){const[a,b]=k.split(",").map(Number),cx=(a-x0)*cs,cy=(b-y0)*cs;if(st.winCells.includes(k)||k===st.last){ctx.fillStyle=col.hl;ctx.fillRect(cx+1,cy+1,cs-2,cs-2)}canvasMark(ctx,p,cx+cs/2,cy+cs/2,cs*.28,Math.max(1.2,cs*.1),col)}
+  }
+  ctx.restore();
+}
+function loadImg(src){return new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(null);i.src=src})}
+async function avatarImages(ids){const o={};for(const id of ids){const p=profiles[id];if(p&&p.avatar)o[id]=await loadImg(p.avatar)}return o}
+function drawFrame(ctx,W,g,st,f,col,imgs,look,yaw,caption){
+  const H=W+Math.round(W*.3);ctx.fillStyle=col.paper;ctx.fillRect(0,0,W,H);
+  const pad=Math.round(W*.04),fs=Math.round(W*.045);
+  ctx.fillStyle=col.ink;ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.font=`bold ${Math.round(fs*1.15)}px Helvetica, Arial, sans-serif`;ctx.fillText(variantName(g.v),pad,pad+fs);
+  let x=pad;const y=pad+fs*2.5,ar=fs*.75;ctx.font=`bold ${Math.round(fs*.8)}px Helvetica, Arial, sans-serif`;
+  for(const s of f.syms){const p=f.seats[s];canvasMark(ctx,s,x+ar*.6,y,ar*.55,Math.max(1.5,ar*.18),col);x+=ar*1.5;
+    if(p){if(imgs[p]){ctx.save();ctx.beginPath();ctx.arc(x+ar,y,ar,0,7);ctx.clip();ctx.drawImage(imgs[p],x,y-ar,ar*2,ar*2);ctx.restore()}
+      else{ctx.fillStyle=avColor(dispName(p));ctx.beginPath();ctx.arc(x+ar,y,ar,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(dispName(p).slice(0,1).toUpperCase(),x+ar,y+1)}
+      x+=ar*2.4;}
+    ctx.fillStyle=col.ink;ctx.textAlign="left";ctx.textBaseline="middle";const nm=p?dispName(p):"Open seat";ctx.fillText(nm,x,y);x+=ctx.measureText(nm).width+ar*1.6}
+  ctx.textBaseline="alphabetic";ctx.fillStyle=col.muted;ctx.font=`${Math.round(fs*.8)}px Helvetica, Arial, sans-serif`;ctx.fillText(caption,pad,y+fs*1.9);
+  const bs=W-pad*2;drawBoardCanvas(ctx,g,st,pad,H-bs-pad,bs,col,look,yaw);
+  return H;
+}
+function resultCaption(g,f){
+  const nm=p=>p?dispName(p):"Open seat",sym=s=>SYMNAME[s];
+  if(g.q){const rest=f.syms.filter(s=>f.seats[s]&&f.seats[s]!==g.q);return`${nm(g.q)} resigned. ${rest.length>1?rest.map(s=>nm(f.seats[s])).join(" and ")+" tie":nm(f.seats[rest[0]])+" wins"}.`}
+  if(f.over){if(!f.winners.length)return"It's a tie.";if(f.winners.length>1)return`${f.winners.map(s=>`${nm(f.seats[s])} (${sym(s)})`).join(" and ")} tie.`;return`${nm(f.seats[f.winners[0]])} (${sym(f.winners[0])}) wins!`}
+  return`In progress · ${f.st.n} moves so far`;
+}
+async function makePicture(look){
+  const g=games.find(x=>x.id===curId),f=info(g);const imgs=await avatarImages(coPlayersAll(g));
+  const W=900,c=document.createElement("canvas");c.width=W;c.height=W+Math.round(W*.3);
+  drawFrame(c.getContext("2d"),W,g,f.st,f,IMGC,imgs,look,-.6,resultCaption(g,f));
+  return new Promise(ok=>c.toBlob(b=>ok(b),"image/png"));
+}
+/* small GIF encoder (fixed palette + LZW) */
+const GIFPAL=(()=>{const base=Object.values(IMGC).map(h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]);
+  const out=[];const add=c=>{if(!out.some(o=>o[0]===c[0]&&o[1]===c[1]&&o[2]===c[2]))out.push(c)};base.forEach(add);
+  const mix=(a,b,t)=>a.map((v,i)=>Math.round(v*(1-t)+b[i]*t));const P=base[0];for(const c of base.slice(1))add(mix(P,c,.5));for(const c of[base[4],base[6],base[7],base[8]])add(mix(P,c,.25));
+  while(out.length<32)out.push([0,0,0]);return out.slice(0,32)})();
+function quantize(data){const n=data.length/4,out=new Uint8Array(n),cache=new Map();
+  for(let i=0;i<n;i++){const r=data[i*4],g=data[i*4+1],b=data[i*4+2],key=(r<<16)|(g<<8)|b;let v=cache.get(key);
+    if(v===undefined){let bd=1e9;for(let k=0;k<GIFPAL.length;k++){const p=GIFPAL[k],d=(p[0]-r)**2+(p[1]-g)**2+(p[2]-b)**2;if(d<bd){bd=d;v=k}}cache.set(key,v)}out[i]=v}return out}
+function gifEncode(w,h,frames,delays){
+  let buf=new Uint8Array(1<<20),len=0;const put=b=>{if(len>=buf.length){const nb=new Uint8Array(buf.length*2);nb.set(buf);buf=nb}buf[len++]=b};
+  const w16=n=>{put(n&255);put((n>>8)&255)},str=s=>{for(const ch of s)put(ch.charCodeAt(0))};
+  str("GIF89a");w16(w);w16(h);put(0xF4);put(0);put(0);for(const c of GIFPAL){put(c[0]);put(c[1]);put(c[2])}
+  put(0x21);put(0xFF);put(11);str("NETSCAPE2.0");put(3);put(1);put(0);put(0);put(0);
+  frames.forEach((px,fi)=>{
+    put(0x21);put(0xF9);put(4);put(0);w16(delays[fi]);put(0);put(0);
+    put(0x2C);w16(0);w16(0);w16(w);w16(h);put(0);
+    const minCode=5,clear=1<<minCode,eoi=clear+1;put(minCode);
+    let codeSize=minCode+1,next=eoi+1,dict=new Map(),cur=0,bits=0,block=[];
+    const flush=()=>{put(block.length);for(const b of block)put(b);block=[]};
+    const emit=c=>{cur|=c<<bits;bits+=codeSize;while(bits>=8){block.push(cur&255);cur>>>=8;bits-=8;if(block.length===255)flush()}};
+    emit(clear);let prefix=px[0];
+    for(let i=1;i<px.length;i++){const k=px[i],key=prefix*64+k,v=dict.get(key);
+      if(v!==undefined){prefix=v;continue}
+      emit(prefix);
+      if(next===4096){emit(clear);dict=new Map();codeSize=minCode+1;next=eoi+1}
+      else{if(next>=(1<<codeSize))codeSize++;dict.set(key,next++)}
+      prefix=k}
+    emit(prefix);emit(eoi);if(bits>0)block.push(cur&255);if(block.length)flush();put(0);
+  });
+  put(0x3B);return buf.slice(0,len);
+}
+async function makeGif(look,spin){
+  const g=games.find(x=>x.id===curId),full=info(g),moves=decMoves(g.v,g.m),n=moves.length;
+  const W=360,H=W+Math.round(W*.3),c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d",{willReadFrequently:true});
+  const frames=[],delays=[];const yield_=()=>new Promise(r=>setTimeout(r,0));
+  const cube=kindOf(g.v)==="C3"&&look==="cube";
+  if(cube&&spin==="spinfull"){const FR=48;for(let k=0;k<FR;k++){drawFrame(ctx,W,g,full.st,full,IMGC,{},look,-.6+k/FR*Math.PI*2,resultCaption(g,full));frames.push(quantize(ctx.getImageData(0,0,W,H).data));delays.push(18);if(k%6===0)await yield_()}}
+  else{
+    const maxF=60,step=Math.max(1,Math.ceil(n/maxF)),ks=[];for(let k=0;k<n;k+=step)ks.push(k);ks.push(n);
+    const delay=Math.max(12,Math.min(60,Math.floor(800/ks.length)));
+    for(let j=0;j<ks.length;j++){const k=ks[j],f=info(g,k);const yaw=cube&&spin==="spin"?-.6+j/ks.length*Math.PI*2:-.6;
+      drawFrame(ctx,W,g,f.st,f,IMGC,{},look,yaw,k===n?resultCaption(g,full):`Move ${k} of ${n}`);frames.push(quantize(ctx.getImageData(0,0,W,H).data));delays.push(j===ks.length-1?200:delay);if(j%5===0)await yield_()}
+  }
+  return new Blob([gifEncode(W,H,frames,delays)],{type:"image/gif"});
+}
+async function shareFile(){
+  if(!preview)return;const file=new File([preview.blob],preview.name,{type:preview.blob.type});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:preview.name});return}}catch(e){if(e&&e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=preview.url;a.download=preview.name;document.body.appendChild(a);a.click();a.remove();
+}
+
+/* ===================== events ===================== */
+app.addEventListener("submit",async e=>{
+  e.preventDefault();const id=e.target.id;
+  if(id==="authform")submitAuth();
+  else if(id==="newform")startGame();
+  else if(id==="profileform")saveProfile();
+  else if(id==="chatform"){const inp=document.getElementById("chat-text"),t=inp.value.trim();if(!t||!curId)return;inp.value="";
+    try{await B.chatSend(curId,t);await loadChat(curId);markRead(curId);if(chatSub)chatSub.ping();B.notify("chat",curId,{text:t}).catch(()=>{});render()}catch(err){toast("That message didn't send.");inp.value=t}}
+  else if(id==="saveform"){
+    const fm=e.target,what=(e.submitter&&e.submitter.value)||"png",look=fm.look?fm.look.value:"layers",spin=fm.spin?fm.spin.value:"spin";
+    lsSet("u2-look",look);lsSet("u2-spin",spin);
+    toast(what==="gif"?"Making your GIF…":"Making your picture…");
+    try{const blob=what==="gif"?await makeGif(look,spin):await makePicture(look);if(preview)URL.revokeObjectURL(preview.url);
+      const g=games.find(x=>x.id===curId);preview={blob,url:URL.createObjectURL(blob),kind:what,name:`${variantName(g.v).replace(/[^A-Za-z0-9]+/g,"-")}.${what}`};saveOpen=false;toastEl.hidden=true;render()}
+    catch(err){toast("Couldn't make that file.")}
+  }
+});
+app.addEventListener("change",async e=>{
+  if(e.target.id==="av-file"&&e.target.files[0]){try{pendingAvatar=await shrinkPicture(e.target.files[0]);render()}catch(err){toast("That picture couldn't be opened. Try a different one.")}return}
+  if(e.target.closest("#newform")){readPickForm();render();return}
+  if(e.target.name==="view3d"){view3d=e.target.value;lsSet("u2-3dview",view3d);cubeSpin=false;render();return}
+});
+app.addEventListener("input",e=>{if(e.target.id==="rp-range"){stopReplay();replayK=+e.target.value;sel=null;render()}});
+app.addEventListener("click",e=>{
+  if(e.target.id==="u3cv"){const r=e.target.getBoundingClientRect(),c=Math.min(2,Math.floor((e.clientX-r.left)/r.width*3)),w=Math.min(2,Math.floor((e.clientY-r.top)/r.height*3));zoom4=[w*3+c];sel=null;render();return}
+  const b=e.target.closest("[data-act]");if(!b)return;
+  const act=b.dataset.act,g=games.find(x=>x.id===curId);
+  if(act==="mode"){authMode=b.dataset.m;formErr="";render()}
+  else if(act==="signout"){if(watcher)watcher.stop();watcher=null;subscribeChat(null);games=[];invites=[];gamesLoaded=false;curId=null;me=null;screen="game";B.signOut()}
+  else if(act==="menu"){screen="menu";formErr="";stopReplay();cubeSpin=false;render();window.scrollTo(0,0)}
+  else if(act==="history"){screen="history";render();window.scrollTo(0,0)}
+  else if(act==="back"){screen="game";formErr="";pendingAvatar=undefined;render();window.scrollTo(0,0)}
+  else if(act==="profile"){screen="profile";formErr="";pendingAvatar=undefined;stopReplay();cubeSpin=false;render();window.scrollTo(0,0)}
+  else if(act==="av-remove"){pendingAvatar=null;render()}
+  else if(act==="phone-skip"){lsSet("u2-phone-skip","1");render()}
+  else if(act==="push-on")pushOn();
+  else if(act==="push-off")pushOff();
+  else if(act==="open")openGame(b.dataset.id);
+  else if(act==="challenge"){pick.to=b.dataset.id;pick.to2=b.dataset.id2||"";if(b.dataset.id2)pick.type="t3";screen="menu";render();const c=document.getElementById("newcard");if(c)c.scrollIntoView({behavior:"smooth"})}
+  else if(act==="inv-yes"){b.disabled=true;doJoin(b.dataset.g,null,b.dataset.id)}
+  else if(act==="inv-no"){b.disabled=true;B.answerInvite(b.dataset.id,false).catch(()=>{}).then(()=>{invites=invites.filter(i=>i.id!==b.dataset.id);render()})}
+  else if(act==="pick-seat"&&joinPick){doJoin(joinPick.gid,+b.dataset.s,joinPick.inviteId)}
+  else if(act==="pick-cancel"){joinPick=null;render()}
+  else if(act==="send-invite"){const to=document.getElementById("invite-to").value;
+    B.invite(curId,to).then(()=>{toast(`Invite sent to ${dispName(to)}.`);B.notify("invite",curId,{to}).catch(()=>{})},()=>toast("Couldn't send that invite."))}
+  else if(act==="copy-invite"){const el=document.getElementById("invitebox");const fb=()=>{el.focus();el.select();toast("Copy the selected link.")};
+    try{navigator.clipboard.writeText(el.value).then(()=>toast("Invite link copied."),fb)}catch(err){fb()}}
+  else if(act==="remind"){b.disabled=true;B.notify("remind",curId).then(r=>toast(r&&r.sent?"Reminder sent.":r&&r.limited?"You already reminded them in the last 3 minutes.":"They haven't turned on notifications. Use Text instead."),()=>toast("Couldn't send a reminder. Use Text instead.")).finally(()=>{b.disabled=false})}
+  else if(act==="chat"){chatOpen=!chatOpen;if(chatOpen&&curId){markRead(curId);loadChat(curId)}render();if(chatOpen){const i=document.getElementById("chat-text");if(i)i.focus()}}
+  else if(act==="resign"){confirmResign=true;render()}
+  else if(act==="resign-no"){confirmResign=false;render()}
+  else if(act==="resign-yes"){confirmResign=false;B.resign(curId).then(()=>watcher.reload(),()=>toast("Couldn't resign. Check your connection."))}
+  else if(act==="zoom"){zoomU=+b.dataset.u;render()}
+  else if(act==="whole"){zoomU=null;render()}
+  else if(act==="zoom4"){zoom4=b.dataset.p?b.dataset.p.split(",").map(Number):[];sel=null;render();const w=document.querySelector(".boardbar");if(w)w.scrollIntoView({block:"start",behavior:"smooth"})}
+  else if(act==="cancel"){sel=null;render()}
+  else if(act==="place")place();
+  else if(act==="cell"){if(b.classList.contains("legal"))tapMove(b.dataset.m)}
+  else if(act==="inf-zoom"){const v=infView[curId];if(v){v.cells=Math.min(60,Math.max(5,v.cells/ +b.dataset.z));paintInf()}}
+  else if(act==="inf-center"){const v=infView[curId];if(v&&g){const st=info(g,replayK).st;const R=infRegion(st);v.cx=st.lastXY?st.lastXY[0]+.5:(R.x0+R.x1+1)/2;v.cy=st.lastXY?st.lastXY[1]+.5:(R.y0+R.y1+1)/2;v.cells=11;paintInf()}}
+  else if(act==="cube-spin"){cubeSpin=!cubeSpin;b.textContent=cubeSpin?"Stop spinning":"Spin";cubeLoop()}
+  else if(act==="cube-reset"){cubeYaw=-.6;cubePitch=.45;paintCube()}
+  else if(act==="rp-start"){replayK=0;sel=null;render()}
+  else if(act==="rp-exit"){stopReplay();replayK=null;render()}
+  else if(act==="rp"){stopReplay();const n=decMoves(g.v,g.m).length;replayK=Math.max(0,Math.min(n,+b.dataset.k));render()}
+  else if(act==="rp-play"){if(replayTimer){stopReplay();render();return}const n=decMoves(g.v,g.m).length;if(replayK>=n)replayK=0;
+    replayTimer=setInterval(()=>{if(replayK>=n){stopReplay();render();return}replayK++;render()},Math.max(120,Math.min(700,8000/Math.max(1,n))));render()}
+  else if(act==="save-open"){saveOpen=!saveOpen;render()}
+  else if(act==="preview-close"){if(preview)URL.revokeObjectURL(preview.url);preview=null;render()}
+  else if(act==="share-file")shareFile();
+});
+if("serviceWorker"in navigator){
+  navigator.serviceWorker.addEventListener("message",e=>{if(e.data&&e.data.open){try{const h=new URL(e.data.open).hash;if(h){location.hash=h}}catch(err){}}});
+  if(lsGet("u2-push","0")==="1")navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+/* ===================== boot ===================== */
+(function boot(){
+  const cfg=window.U2_SUPABASE;
+  if(window.U2_TEST_MOCK)B=mockBackend();
+  else if(!cfg||!cfg.url||!cfg.key||!window.supabase){app.innerHTML=`<div class="stack"><h1>Ultimate<sup>2</sup></h1><div class="banner">${window.supabase?"This game isn't connected to its database yet.":"Couldn't load the game. Check your internet connection and reopen it."}</div></div>`;return}
+  else B=supabaseBackend(cfg);
+  B.onAuth(async u=>{
+    authReady=true;
+    if(watcher){watcher.stop();watcher=null}
+    uid=u?u.uid:null;me=null;games=[];invites=[];chatLatest={};gamesLoaded=false;curId=null;routed=false;phones={};chats={};
+    if(!uid){render();return}
+    render();
+    try{me=await B.me()}catch(e){me={name:""}}
+    profiles[uid]={name:me.name,display:me.display||null,avatar:me.avatar||null};
+    loadInvites();
+    watcher=B.watchGames(uid,list=>{
+      games=list;gamesLoaded=true;
+      if(!routed){routed=true;route()}
+      if(screen==="game"&&replayK==null&&ptrs.size===0)render();else if(screen!=="game")render();
+    });
+  });
+})();
+</script>
+</body>
+</html>
