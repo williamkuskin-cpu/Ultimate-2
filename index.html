@@ -181,6 +181,7 @@ select{font:inherit;padding:9px 10px;border:1.5px solid var(--grid-strong);borde
 .wline{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible}
 .wline line{stroke-linecap:round}
 .over.faint{background:transparent}
+.over.top{background:transparent;z-index:3}
 .over.faint svg{opacity:.5}
 /* replay + pictures */
 .replaybar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -890,8 +891,10 @@ function boardHTML(st,prefix,o){
   let h=`<div class="board ${lv}${isRoot?" root "+o.rootClass:""}">`;
   for(let k=0;k<9;k++)h+=boardHTML(st,prefix.concat(k),o);
   const r=R[d][id],hasBoardKids=d+1<L;
-  if(r&&d>0)h+=`<div class="over${r===3?" tie":""}${hasBoardKids?" faint":""}">${r===3?"<span>tie</span>":mark(r,1.2,rotOf(V,prefix))}</div>`;
+  if(r===3&&d>0)h+=`<div class="over tie${hasBoardKids?" faint":""}"><span>tie</span></div>`;
+  if((r===1||r===2)&&d>0)h+=`<div class="over${hasBoardKids?" faint":""}"></div>`;
   if(r===1||r===2)h+=wlineSVG(lineOf(R[d+1].slice(id*9,id*9+9),r,hasBoardKids),r);
+  if((r===1||r===2)&&d>0)h+=`<div class="over top${hasBoardKids?" faint":""}">${mark(r,1.2,rotOf(V,prefix))}</div>`;
   h+=`</div>`;
   const tilted=V.tilt&&d>0&&prefix[d-1]===4;
   return tilted?`<div class="slot">${h}</div>`:h;
@@ -948,7 +951,7 @@ function cubeProject(yaw,pitch,W,H){
   };
 }
 function cubePos(i){const c=C3XYZ(i);return[c.x-1.5,(1.5-c.z)*1.25,c.y-1.5]} // layers stacked with a little air between
-function drawCube(ctx,st,W,H,yaw,pitch,col,showLegal){
+function drawCube(ctx,st,W,H,yaw,pitch,col,showLegal,anim){
   const P=cubeProject(yaw,pitch,W,H);
   ctx.fillStyle=col.paper2;ctx.fillRect(0,0,W,H);
   // layer outlines + grid
@@ -964,7 +967,7 @@ function drawCube(ctx,st,W,H,yaw,pitch,col,showLegal){
   items.sort((a,b)=>a.p.z-b.p.z);
   for(const it of items){const r=it.p.s*.32;
     if(st.winCells.includes(it.i)||it.i===st.last||enc2(it.i)===sel){ctx.fillStyle=col.hl;ctx.beginPath();ctx.arc(it.p.x,it.p.y,r*1.25,0,7);ctx.fill()}
-    if(it.v)canvasMark(ctx,it.v,it.p.x,it.p.y,r,Math.max(1.5,r*.32),col);
+    if(it.v)canvasMark(ctx,it.v,it.p.x,it.p.y,r,Math.max(1.5,r*.32),col,1,anim&&anim.i===it.i?anim.t:1);
     else if(it.legalHere){ctx.fillStyle=col.gs;ctx.beginPath();ctx.arc(it.p.x,it.p.y,Math.max(1.5,r*.18),0,7);ctx.fill()}
     else if(enc2(it.i)===sel)canvasMark(ctx,st.turn,it.p.x,it.p.y,r,Math.max(1.5,r*.32),col,.5)}
   if(st.winCells.length===4){const a=P(...cubePos(st.winCells[0])),b=P(...cubePos(st.winCells[3]));
@@ -1241,75 +1244,106 @@ app.addEventListener("pointerup",endPtr);app.addEventListener("pointercancel",en
 app.addEventListener("wheel",e=>{const svg=e.target.closest("#infsvg");if(!svg)return;e.preventDefault();const v=infView[curId];if(!v)return;v.cells=Math.min(60,Math.max(5,v.cells*(e.deltaY>0?1.1:.9)));paintInf()},{passive:false});
 window.addEventListener("resize",()=>{paintInf();paintCube();const g=games.find(x=>x.id===curId);if(g&&/^u3/.test(g.v)&&!zoom4.length)paintU3(info(g,replayK).st)});
 
-/* ===================== pictures and GIFs ===================== */
-const IMGC={paper:"#f2f6f8",paper2:"#e6eef2",grid:"#c4d6e0",gs:"#7f97a6",ink:"#1d2932",muted:"#5b6b76",x:"#c63d2b",o:"#2453b3",s:"#2f8f4e",hl:"#ffe45c",white:"#ffffff"};
+/* ===================== pictures and GIFs: dark, drawn in the app's own style ===================== */
+const IMGC={paper:"#111a21",paper2:"#18242d",grid:"#263845",gs:"#5d7686",ink:"#e2eaef",muted:"#93a5b1",x:"#ff7b64",o:"#7ea8ff",s:"#6fd38e",hl:"#7a6a10",white:"#ffffff"};
+const FONT_D='Kalam, "Comic Sans MS", "Segoe Print", cursive',FONT_B='"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif';
+async function ensureFonts(){try{await Promise.all([document.fonts.load(`700 48px Kalam`),document.fonts.load(`700 24px "Atkinson Hyperlegible"`),document.fonts.load(`400 24px "Atkinson Hyperlegible"`)])}catch(e){}}
 function liveColors(){const cs=getComputedStyle(document.documentElement),g=n=>cs.getPropertyValue(n).trim();
   return{paper:g("--paper"),paper2:g("--paper-2"),grid:g("--grid"),gs:g("--grid-strong"),ink:g("--ink"),muted:g("--muted"),x:g("--x"),o:g("--o"),s:g("--s")||IMGC.s,hl:g("--hl"),white:"#fff"}}
-function canvasMark(ctx,p,cx,cy,r,w,col,alpha=1){
+// A mark the same shape as the app's. prog < 1 draws it partway, the way the app animates a new move.
+function canvasMark(ctx,p,cx,cy,r,w,col,alpha=1,prog=1){
+  if(prog<=0)return;
   ctx.save();ctx.globalAlpha=alpha;ctx.lineWidth=w;ctx.lineCap="round";ctx.lineJoin="round";
-  if(p===1){ctx.strokeStyle=col.x;ctx.beginPath();ctx.moveTo(cx-r,cy-r);ctx.lineTo(cx+r,cy+r);ctx.moveTo(cx+r,cy-r);ctx.lineTo(cx-r,cy+r);ctx.stroke()}
-  else if(p===2){ctx.strokeStyle=col.o;ctx.beginPath();ctx.arc(cx,cy,r*1.08,0,Math.PI*2);ctx.stroke()}
-  else if(p===3){ctx.strokeStyle=col.s;ctx.beginPath();ctx.moveTo(cx-1.25*r,cy+.55*r);ctx.bezierCurveTo(cx-.85*r,cy-1.0*r,cx-.3*r,cy-1.0*r,cx,cy);ctx.bezierCurveTo(cx+.3*r,cy+1.0*r,cx+.85*r,cy+1.0*r,cx+1.25*r,cy-.55*r);ctx.stroke()}
-  else if(p===4){ctx.fillStyle=col.ink;ctx.font=`bold ${Math.round(r*2.2)}px Helvetica, Arial, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("A",cx,cy+r*.08)}
+  if(p===1){const a=Math.min(1,prog*2),b=Math.max(0,prog*2-1);ctx.strokeStyle=col.x;ctx.beginPath();
+    ctx.moveTo(cx-r,cy-r);ctx.lineTo(cx-r+2*r*a,cy-r+2*r*a);if(b>0){ctx.moveTo(cx+r,cy-r);ctx.lineTo(cx+r-2*r*b,cy-r+2*r*b)}ctx.stroke()}
+  else if(p===2){ctx.strokeStyle=col.o;ctx.beginPath();ctx.arc(cx,cy,r*1.1,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,prog));ctx.stroke()}
+  else if(p===3){ctx.strokeStyle=col.s;if(prog<1){ctx.beginPath();ctx.rect(cx-1.7*r,cy-1.7*r,3.4*r*prog,3.4*r);ctx.clip()}
+    ctx.beginPath();ctx.moveTo(cx-1.25*r,cy+.55*r);ctx.bezierCurveTo(cx-.85*r,cy-1.0*r,cx-.3*r,cy-1.0*r,cx,cy);ctx.bezierCurveTo(cx+.3*r,cy+1.0*r,cx+.85*r,cy+1.0*r,cx+1.25*r,cy-.55*r);ctx.stroke()}
+  else if(p===4){ctx.fillStyle=col.ink;ctx.font=`700 ${Math.round(r*2.6)}px ${FONT_B}`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("A",cx,cy+r*.1)}
   ctx.restore();
 }
-function drawU(ctx,st,prefix,size,rotAcc,col){
+function lastRing(ctx,x,y,s,col){ // the app's "last move" outline
+  if(s<7){ctx.fillStyle=col.hl;ctx.fillRect(x,y,s,s);return}
+  ctx.save();ctx.globalAlpha=.6;ctx.strokeStyle=col.ink;ctx.lineWidth=Math.max(1,s*.07);const m=Math.max(1,s*.06);
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x+m,y+m,s-2*m,s-2*m,s*.12);else ctx.rect(x+m,y+m,s-2*m,s-2*m);ctx.stroke();ctx.restore();
+}
+function winLine(ctx,a,b,ext,owner,cs,col){ // ink shadow + colored line, like the app
+  const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1,ex=dx/len*ext,ey=dy/len*ext;ctx.save();ctx.lineCap="round";
+  ctx.globalAlpha=.55;ctx.strokeStyle=col.ink;ctx.lineWidth=Math.max(2,cs*.2);ctx.beginPath();ctx.moveTo(a[0]-ex,a[1]-ey);ctx.lineTo(b[0]+ex,b[1]+ey);ctx.stroke();
+  ctx.globalAlpha=1;ctx.strokeStyle=owner===1?col.x:owner===2?col.o:col.s;ctx.lineWidth=Math.max(1.2,cs*.11);ctx.beginPath();ctx.moveTo(a[0]-ex,a[1]-ey);ctx.lineTo(b[0]+ex,b[1]+ey);ctx.stroke();ctx.restore();
+}
+function drawU(ctx,st,prefix,size,rotAcc,col,anim){
   const{V,R}=st,L=V.L,d=prefix.length;
-  if(d===L){const i=idOf(prefix,L),v=R[L][i];ctx.fillStyle=i===st.last?col.hl:col.paper;ctx.fillRect(0,0,size,size);
-    if(v){ctx.save();ctx.translate(size/2,size/2);ctx.rotate(-rotAcc*Math.PI/4);canvasMark(ctx,v,0,0,size*.28,Math.max(1,size*.11),col);ctx.restore()}return}
-  const gap=d===0?size*.012:(d+1===L?Math.max(.6,size*.012):size*.016);
+  if(d===L){const i=idOf(prefix,L),v=R[L][i];ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);
+    if(i===st.last)lastRing(ctx,0,0,size,col);
+    if(v){ctx.save();ctx.translate(size/2,size/2);ctx.rotate(-rotAcc*Math.PI/4);canvasMark(ctx,v,0,0,size*.21,Math.max(.8,size*.125),col,1,anim&&anim.i===i?anim.t:1);ctx.restore()}return}
+  const gap=d===0?Math.max(1.5,size*.0065):(d+1===L?Math.max(.6,size*.012):Math.max(.8,size*.009));
   ctx.fillStyle=d===0?col.ink:d+1===L?col.grid:col.gs;ctx.fillRect(0,0,size,size);
   const cs=(size-2*gap)/3;
   for(let k=0;k<9;k++){const x=(k%3)*(cs+gap),y=Math.floor(k/3)*(cs+gap),tilted=V.tilt&&k===4&&d+1<L;
     ctx.save();ctx.translate(x,y);
     if(tilted){ctx.fillStyle=col.paper;ctx.fillRect(0,0,cs,cs);ctx.translate(cs/2,cs/2);ctx.rotate(Math.PI/4);ctx.scale(Math.SQRT1_2,Math.SQRT1_2);ctx.translate(-cs/2,-cs/2)}
-    drawU(ctx,st,prefix.concat(k),cs,rotAcc+(tilted?1:0),col);ctx.restore()}
+    drawU(ctx,st,prefix.concat(k),cs,rotAcc+(tilted?1:0),col,anim);ctx.restore()}
   const id=idOf(prefix,d),r=R[d][id],kidsBoards=d+1<L;
-  if(r&&d>0){if(!kidsBoards){ctx.globalAlpha=.72;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);ctx.globalAlpha=1}
+  if(r&&d>0&&!kidsBoards){ctx.globalAlpha=.76;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);ctx.globalAlpha=1}
+  if(r===1||r===2){const l=lineOf(R[d+1].slice(id*9,id*9+9),r,kidsBoards);if(l){const c=k=>[(k%3)*(cs+gap)+cs/2,Math.floor(k/3)*(cs+gap)+cs/2];winLine(ctx,c(l[0]),c(l[2]),cs*.38,r,cs,col)}}
+  if(r&&d>0){
     ctx.save();ctx.translate(size/2,size/2);ctx.rotate(-rotAcc*Math.PI/4);
-    if(r===3){ctx.fillStyle=col.muted;ctx.font=`bold ${Math.round(size*.22)}px Helvetica, Arial, sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("tie",0,0)}
-    else canvasMark(ctx,r,0,0,size*.3,Math.max(1.5,size*.08),col,kidsBoards?.5:1);ctx.restore()}
-  if(r===1||r===2){const l=lineOf(R[d+1].slice(id*9,id*9+9),r,kidsBoards);if(l){const c=k=>[(k%3)*(cs+gap)+cs/2,Math.floor(k/3)*(cs+gap)+cs/2],a=c(l[0]),b=c(l[2]);
-    const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy),ex=dx/len*cs*.4,ey=dy/len*cs*.4;ctx.lineCap="round";
-    ctx.strokeStyle=col.ink;ctx.globalAlpha=.5;ctx.lineWidth=Math.max(2,size*.035);ctx.beginPath();ctx.moveTo(a[0]-ex,a[1]-ey);ctx.lineTo(b[0]+ex,b[1]+ey);ctx.stroke();
-    ctx.globalAlpha=1;ctx.strokeStyle=r===1?col.x:col.o;ctx.lineWidth=Math.max(1.2,size*.018);ctx.beginPath();ctx.moveTo(a[0]-ex,a[1]-ey);ctx.lineTo(b[0]+ex,b[1]+ey);ctx.stroke()}}
+    if(r===3){ctx.fillStyle=col.muted;ctx.font=`700 ${Math.round(size*.24)}px ${FONT_D}`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.rotate(-.14);ctx.fillText("tie",0,0)}
+    else canvasMark(ctx,r,0,0,size*.33,Math.max(1.2,size*.1),col,kidsBoards?.5:1);ctx.restore()}
 }
-function drawGrid(ctx,st,n,cells,size,col,labelFn){ // simple n x n grid (Trifectacto, one 3D layer)
-  const gap=Math.max(1,size*.012);ctx.fillStyle=col.ink;ctx.fillRect(0,0,size,size);const cs=(size-gap*(n+1))/n;
-  for(let k=0;k<n*n;k++){const i=cells[k],x=gap+(k%n)*(cs+gap),y=gap+Math.floor(k/n)*(cs+gap),v=st.cells[i];
-    ctx.fillStyle=st.winCells.includes(i)||i===st.last?col.hl:col.paper;ctx.fillRect(x,y,cs,cs);if(v)canvasMark(ctx,v,x+cs/2,y+cs/2,cs*.28,Math.max(1.2,cs*.1),col)}
+function drawGrid(ctx,st,n,cells,size,col,anim){ // Trifectacto, or one layer of 3D
+  const gap=Math.max(1.5,size*.008),bw=Math.max(2,size*.012);ctx.fillStyle=col.ink;ctx.fillRect(0,0,size,size);const cs=(size-2*bw-gap*(n-1))/n;
+  for(let k=0;k<n*n;k++){const i=cells[k],x=bw+(k%n)*(cs+gap),y=bw+Math.floor(k/n)*(cs+gap),v=st.cells[i],win=st.winCells.includes(i);
+    ctx.fillStyle=win?col.hl:col.paper;ctx.fillRect(x,y,cs,cs);
+    if(win){ctx.strokeStyle=col.ink;ctx.lineWidth=Math.max(1.5,cs*.05);ctx.strokeRect(x+cs*.025,y+cs*.025,cs*.95,cs*.95)}else if(i===st.last)lastRing(ctx,x,y,cs,col);
+    if(v)canvasMark(ctx,v,x+cs/2,y+cs/2,cs*.21,Math.max(1.2,cs*.125),col,1,anim&&anim.i===i?anim.t:1)}
 }
-function drawBoardCanvas(ctx,g,st,x,y,size,col,look,yaw){
+function roundClip(ctx,x,y,w,h,r){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);ctx.clip()}
+function drawBoardCanvas(ctx,g,st,x,y,size,col,look,yaw,anim){
   ctx.save();ctx.translate(x,y);
-  if(st.kind==="U")drawU(ctx,st,[],size,0,col);
-  else if(st.kind==="T3")drawGrid(ctx,st,5,[...Array(25).keys()],size,col);
+  if(st.kind==="U"){roundClip(ctx,0,0,size,size,size*.009);drawU(ctx,st,[],size,0,col,anim)}
+  else if(st.kind==="T3"){roundClip(ctx,0,0,size,size,size*.01);drawGrid(ctx,st,5,[...Array(25).keys()],size,col,anim)}
   else if(st.kind==="C3"){
-    if(look==="cube")drawCube(ctx,st,size,size,yaw,.45,col,false);
-    else{const ls=(size-24)/2;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);
-      for(let z=0;z<4;z++){const lx=(z%2)*(ls+24),ly=Math.floor(z/2)*(ls+24);ctx.fillStyle=col.muted;ctx.font=`bold ${Math.round(size*.03)}px Helvetica, Arial, sans-serif`;ctx.textAlign="left";ctx.textBaseline="alphabetic";
-        ctx.fillText(`Layer ${z+1}`,lx,ly+size*.03);ctx.save();ctx.translate(lx,ly+size*.04);drawGrid(ctx,st,4,[...Array(16).keys()].map(k=>z*16+k),ls-size*.04,col);ctx.restore()}}
-  }else{ // Infinite: the occupied area plus one square around it
+    if(look==="cube"){roundClip(ctx,0,0,size,size,size*.012);drawCube(ctx,st,size,size,yaw,.45,col,false,anim);ctx.strokeStyle=col.ink;ctx.lineWidth=Math.max(2,size*.006);ctx.strokeRect(0,0,size,size)}
+    else{const gp=size*.05,ls=(size-gp)/2,lab=size*.045;
+      for(let z=0;z<4;z++){const lx=(z%2)*(ls+gp),ly=Math.floor(z/2)*(ls+gp);ctx.fillStyle=col.muted;ctx.font=`700 ${Math.round(size*.026)}px ${FONT_B}`;ctx.textAlign="left";ctx.textBaseline="alphabetic";
+        ctx.fillText(`LAYER ${z+1}${z===0?" (TOP)":z===3?" (BOTTOM)":""}`,lx,ly+size*.03);ctx.save();ctx.translate(lx,ly+lab);roundClip(ctx,0,0,ls-lab,ls-lab,size*.008);drawGrid(ctx,st,4,[...Array(16).keys()].map(k=>z*16+k),ls-lab,col,anim);ctx.restore()}}
+  }else{ // Infinite: the played area plus room around it, like the app's growing board
     let x0=0,x1=0,y0=0,y1=0,first=true;for(const k of st.cells.keys()){const[a,b]=k.split(",").map(Number);if(first){x0=x1=a;y0=y1=b;first=false}x0=Math.min(x0,a);x1=Math.max(x1,a);y0=Math.min(y0,b);y1=Math.max(y1,b)}
-    x0-=1;y0-=1;x1+=1;y1+=1;const n=Math.max(x1-x0+1,y1-y0+1,6),cs=size/n;ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);
-    ctx.strokeStyle=col.grid;ctx.lineWidth=1;for(let k=0;k<=n;k++){ctx.beginPath();ctx.moveTo(k*cs,0);ctx.lineTo(k*cs,size);ctx.moveTo(0,k*cs);ctx.lineTo(size,k*cs);ctx.stroke()}
-    for(const[k,p]of st.cells){const[a,b]=k.split(",").map(Number),cx=(a-x0)*cs,cy=(b-y0)*cs;if(st.winCells.includes(k)||k===st.last){ctx.fillStyle=col.hl;ctx.fillRect(cx+1,cy+1,cs-2,cs-2)}canvasMark(ctx,p,cx+cs/2,cy+cs/2,cs*.28,Math.max(1.2,cs*.1),col)}
+    const n=Math.max(x1-x0+3,y1-y0+3,8);x0-=Math.floor((n-(x1-x0+1))/2);y0-=Math.floor((n-(y1-y0+1))/2);const cs=size/n;
+    roundClip(ctx,0,0,size,size,size*.012);ctx.fillStyle=col.paper;ctx.fillRect(0,0,size,size);
+    ctx.strokeStyle=col.grid;ctx.lineWidth=Math.max(1,cs*.03);for(let k=0;k<=n;k++){ctx.beginPath();ctx.moveTo(k*cs,0);ctx.lineTo(k*cs,size);ctx.moveTo(0,k*cs);ctx.lineTo(size,k*cs);ctx.stroke()}
+    for(const k of st.winCells){const[a,b]=k.split(",").map(Number);ctx.fillStyle=col.hl;ctx.fillRect((a-x0)*cs,(b-y0)*cs,cs,cs)}
+    for(const[k,p]of st.cells){const[a,b]=k.split(",").map(Number),cx=(a-x0)*cs,cy=(b-y0)*cs;if(k===st.last&&!st.winCells.includes(k))lastRing(ctx,cx,cy,cs,col);canvasMark(ctx,p,cx+cs/2,cy+cs/2,cs*.21,Math.max(1.2,cs*.125),col,1,anim&&anim.i===k?anim.t:1)}
+    if(st.winCells.length){const pts=st.winCells.map(k=>k.split(",").map(Number)).sort((a,b)=>a[0]-b[0]||a[1]-b[1]),A=pts[0],Z=pts[pts.length-1];
+      winLine(ctx,[(A[0]-x0+.5)*cs,(A[1]-y0+.5)*cs],[(Z[0]-x0+.5)*cs,(Z[1]-y0+.5)*cs],cs*.38,st.winners[0],cs,col)}
+    ctx.strokeStyle=col.ink;ctx.lineWidth=Math.max(2,size*.008);ctx.strokeRect(0,0,size,size);
   }
   ctx.restore();
 }
 function loadImg(src){return new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(null);i.src=src})}
 async function avatarImages(ids){const o={};for(const id of ids){const p=profiles[id];if(p&&p.avatar)o[id]=await loadImg(p.avatar)}return o}
-function drawFrame(ctx,W,g,st,f,col,imgs,look,yaw,caption){
-  const H=W+Math.round(W*.3);ctx.fillStyle=col.paper;ctx.fillRect(0,0,W,H);
-  const pad=Math.round(W*.04),fs=Math.round(W*.045);
-  ctx.fillStyle=col.ink;ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.font=`bold ${Math.round(fs*1.15)}px Helvetica, Arial, sans-serif`;ctx.fillText(variantName(g.v),pad,pad+fs);
-  let x=pad;const y=pad+fs*2.5,ar=fs*.75;ctx.font=`bold ${Math.round(fs*.8)}px Helvetica, Arial, sans-serif`;
-  for(const s of f.syms){const p=f.seats[s];canvasMark(ctx,s,x+ar*.6,y,ar*.55,Math.max(1.5,ar*.18),col);x+=ar*1.5;
-    if(p){if(imgs[p]){ctx.save();ctx.beginPath();ctx.arc(x+ar,y,ar,0,7);ctx.clip();ctx.drawImage(imgs[p],x,y-ar,ar*2,ar*2);ctx.restore()}
-      else{ctx.fillStyle=avColor(dispName(p));ctx.beginPath();ctx.arc(x+ar,y,ar,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(dispName(p).slice(0,1).toUpperCase(),x+ar,y+1)}
-      x+=ar*2.4;}
-    ctx.fillStyle=col.ink;ctx.textAlign="left";ctx.textBaseline="middle";const nm=p?dispName(p):"Open seat";ctx.fillText(nm,x,y);x+=ctx.measureText(nm).width+ar*1.6}
-  ctx.textBaseline="alphabetic";ctx.fillStyle=col.muted;ctx.font=`${Math.round(fs*.8)}px Helvetica, Arial, sans-serif`;ctx.fillText(caption,pad,y+fs*1.9);
-  const bs=W-pad*2;drawBoardCanvas(ctx,g,st,pad,H-bs-pad,bs,col,look,yaw);
+// One whole picture: graph paper, handwritten title, players with their symbols, status line, board.
+function drawFrame(ctx,W,g,st,f,col,imgs,o){
+  const H=Math.round(W*1.34);ctx.fillStyle=col.paper;ctx.fillRect(0,0,W,H);
+  const sq=W/26;ctx.strokeStyle=col.paper2;ctx.lineWidth=Math.max(1,W/500);ctx.beginPath();
+  for(let x=sq;x<W;x+=sq){ctx.moveTo(x,0);ctx.lineTo(x,H)}for(let y=sq;y<H;y+=sq){ctx.moveTo(0,y);ctx.lineTo(W,y)}ctx.stroke();
+  const pad=Math.round(W*.05),fs=W*.04;
+  ctx.fillStyle=col.ink;ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.font=`700 ${Math.round(W*.078)}px ${FONT_D}`;ctx.fillText(variantName(g.v),pad,pad+W*.07);
+  // player pills
+  let x=pad;const y=pad+W*.145,ar=fs*.78;ctx.font=`700 ${Math.round(fs*.82)}px ${FONT_B}`;
+  for(const s of f.syms){const p=f.seats[s],nm=p?dispName(p):"Open seat",tw=ctx.measureText(nm).width,pw=ar*1.5+(p?ar*2.35:0)+tw+ar*1.3;
+    if(x+pw>W-pad&&x>pad){x=pad}
+    const ring=o.ring&&o.ring.includes(s);
+    if(ring){ctx.save();ctx.strokeStyle=col.ink;ctx.lineWidth=Math.max(1.5,W*.003);ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x-ar*.35,y-ar*1.25,pw,ar*2.5,ar*1.25);else ctx.rect(x-ar*.35,y-ar*1.25,pw,ar*2.5);ctx.stroke();ctx.restore()}
+    let px=x+ar*.25;canvasMark(ctx,s,px+ar*.55,y,ar*.48,Math.max(1.5,ar*.2),col);px+=ar*1.5;
+    if(p){if(imgs[p]){ctx.save();ctx.beginPath();ctx.arc(px+ar,y,ar,0,7);ctx.clip();ctx.drawImage(imgs[p],px,y-ar,ar*2,ar*2);ctx.restore()}
+      else{ctx.fillStyle=avColor(dispName(p));ctx.beginPath();ctx.arc(px+ar,y,ar,0,7);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(dispName(p).slice(0,1).toUpperCase(),px+ar,y+1)}
+      px+=ar*2.35}
+    ctx.fillStyle=p?col.ink:col.muted;ctx.textAlign="left";ctx.textBaseline="middle";ctx.fillText(nm,px,y);x+=pw+ar*.9}
+  ctx.textBaseline="alphabetic";ctx.fillStyle=col.ink;ctx.font=`700 ${Math.round(W*.05)}px ${FONT_D}`;ctx.fillText(o.caption,pad,y+W*.105);
+  const bs=W-pad*2;drawBoardCanvas(ctx,g,st,pad,H-bs-pad,bs,col,o.look,o.yaw,o.anim);
   return H;
 }
 function resultCaption(g,f){
@@ -1318,57 +1352,95 @@ function resultCaption(g,f){
   if(f.over){if(!f.winners.length)return"It's a tie.";if(f.winners.length>1)return`${f.winners.map(s=>`${nm(f.seats[s])} (${sym(s)})`).join(" and ")} tie.`;return`${nm(f.seats[f.winners[0]])} (${sym(f.winners[0])}) wins!`}
   return`In progress · ${f.st.n} moves so far`;
 }
+const ringFor=f=>f.over?f.winners:(f.turn?[f.turn]:[]);
 async function makePicture(look){
+  await ensureFonts();
   const g=games.find(x=>x.id===curId),f=info(g);const imgs=await avatarImages(coPlayersAll(g));
-  const W=900,c=document.createElement("canvas");c.width=W;c.height=W+Math.round(W*.3);
-  drawFrame(c.getContext("2d"),W,g,f.st,f,IMGC,imgs,look,-.6,resultCaption(g,f));
+  const W=1080,c=document.createElement("canvas");c.width=W;c.height=Math.round(W*1.34);
+  drawFrame(c.getContext("2d"),W,g,f.st,f,IMGC,imgs,{look,yaw:-.6,caption:resultCaption(g,f),ring:ringFor(f)});
   return new Promise(ok=>c.toBlob(b=>ok(b),"image/png"));
 }
-/* small GIF encoder (fixed palette + LZW) */
-const GIFPAL=(()=>{const base=Object.values(IMGC).map(h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]);
-  const out=[];const add=c=>{if(!out.some(o=>o[0]===c[0]&&o[1]===c[1]&&o[2]===c[2]))out.push(c)};base.forEach(add);
-  const mix=(a,b,t)=>a.map((v,i)=>Math.round(v*(1-t)+b[i]*t));const P=base[0];for(const c of base.slice(1))add(mix(P,c,.5));for(const c of[base[4],base[6],base[7],base[8]])add(mix(P,c,.25));
-  while(out.length<32)out.push([0,0,0]);return out.slice(0,32)})();
-function quantize(data){const n=data.length/4,out=new Uint8Array(n),cache=new Map();
-  for(let i=0;i<n;i++){const r=data[i*4],g=data[i*4+1],b=data[i*4+2],key=(r<<16)|(g<<8)|b;let v=cache.get(key);
-    if(v===undefined){let bd=1e9;for(let k=0;k<GIFPAL.length;k++){const p=GIFPAL[k],d=(p[0]-r)**2+(p[1]-g)**2+(p[2]-b)**2;if(d<bd){bd=d;v=k}}cache.set(key,v)}out[i]=v}return out}
-function gifEncode(w,h,frames,delays){
-  let buf=new Uint8Array(1<<20),len=0;const put=b=>{if(len>=buf.length){const nb=new Uint8Array(buf.length*2);nb.set(buf);buf=nb}buf[len++]=b};
-  const w16=n=>{put(n&255);put((n>>8)&255)},str=s=>{for(const ch of s)put(ch.charCodeAt(0))};
-  str("GIF89a");w16(w);w16(h);put(0xF4);put(0);put(0);for(const c of GIFPAL){put(c[0]);put(c[1]);put(c[2])}
+
+/* ----- GIF maker: 256-color palette built from the app's colors, frames that only store what changed ----- */
+const GIFPAL=(()=>{const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const base=[IMGC.paper,IMGC.paper2,IMGC.grid,IMGC.gs,IMGC.ink,IMGC.muted,IMGC.x,IMGC.o,IMGC.s,IMGC.hl,"#ffffff","#000000"].map(hex);
+  const out=[],seen=new Set(),add=c=>{const k=c.join();if(!seen.has(k)&&out.length<255){seen.add(k);out.push(c)}};base.forEach(add);
+  const mix=(a,b,t)=>a.map((v,i)=>Math.round(v*(1-t)+b[i]*t));
+  for(let i=0;i<base.length;i++)for(let j=i+1;j<base.length;j++)for(const t of[.25,.5,.75])add(mix(base[i],base[j],t)); // smooth edges between any two app colors
+  for(let r=0;r<5;r++)for(let gg=0;gg<4;gg++)for(let b=0;b<3;b++)add([r*63,gg*85,b*127]);                              // everything else (profile pictures)
+  while(out.length<256)out.push([0,0,0]);return out})(); // index 255 is reserved for "unchanged"
+const GIFLUT=new Int16Array(32768).fill(-1);
+function palIndex(r,g,b){const key=((r>>3)<<10)|((g>>3)<<5)|(b>>3);let v=GIFLUT[key];
+  if(v<0){const R=(r&248)|4,G=(g&248)|4,Bb=(b&248)|4;let bd=1e9;for(let k=0;k<255;k++){const p=GIFPAL[k],d=(p[0]-R)**2*2+(p[1]-G)**2*4+(p[2]-Bb)**2*3;if(d<bd){bd=d;v=k}}GIFLUT[key]=v}return v}
+function gifWriter(w,h){
+  let buf=new Uint8Array(1<<22),len=0;
+  const grow=n=>{if(len+n>buf.length){let s=buf.length*2;while(len+n>s)s*=2;const nb=new Uint8Array(s);nb.set(buf.subarray(0,len));buf=nb}};
+  const put=b=>{if(len>=buf.length)grow(1);buf[len++]=b},w16=n=>{put(n&255);put((n>>8)&255)},str=s=>{for(const ch of s)put(ch.charCodeAt(0))};
+  str("GIF89a");w16(w);w16(h);put(0xF7);put(0);put(0);for(const c of GIFPAL){put(c[0]);put(c[1]);put(c[2])}
   put(0x21);put(0xFF);put(11);str("NETSCAPE2.0");put(3);put(1);put(0);put(0);put(0);
-  frames.forEach((px,fi)=>{
-    put(0x21);put(0xF9);put(4);put(0);w16(delays[fi]);put(0);put(0);
-    put(0x2C);w16(0);w16(0);w16(w);w16(h);put(0);
-    const minCode=5,clear=1<<minCode,eoi=clear+1;put(minCode);
-    let codeSize=minCode+1,next=eoi+1,dict=new Map(),cur=0,bits=0,block=[];
-    const flush=()=>{put(block.length);for(const b of block)put(b);block=[]};
-    const emit=c=>{cur|=c<<bits;bits+=codeSize;while(bits>=8){block.push(cur&255);cur>>>=8;bits-=8;if(block.length===255)flush()}};
-    emit(clear);let prefix=px[0];
-    for(let i=1;i<px.length;i++){const k=px[i],key=prefix*64+k,v=dict.get(key);
-      if(v!==undefined){prefix=v;continue}
-      emit(prefix);
-      if(next===4096){emit(clear);dict=new Map();codeSize=minCode+1;next=eoi+1}
-      else{if(next>=(1<<codeSize))codeSize++;dict.set(key,next++)}
-      prefix=k}
-    emit(prefix);emit(eoi);if(bits>0)block.push(cur&255);if(block.length)flush();put(0);
-  });
-  put(0x3B);return buf.slice(0,len);
+  const code=new Int32Array(1<<20),stamp=new Int32Array(1<<20);let gen=1,lastDelay=-1;
+  return{
+    frame(px,x,y,fw,fh,delay){
+      put(0x21);put(0xF9);put(4);put((1<<2)|1);lastDelay=len;w16(delay);put(255);put(0);   // keep the picture underneath; color 255 = unchanged pixel
+      put(0x2C);w16(x);w16(y);w16(fw);w16(fh);put(0);
+      const minCode=8,clear=256,eoi=257;put(minCode);
+      let codeSize=9,next=258,cur=0,bits=0,blk=new Uint8Array(255),bl=0;gen++;
+      const emit=c=>{cur|=c<<bits;bits+=codeSize;while(bits>=8){blk[bl++]=cur&255;cur>>>=8;bits-=8;if(bl===255){grow(256);buf[len++]=255;buf.set(blk,len);len+=255;bl=0}}};
+      emit(clear);let prefix=px[0];
+      for(let i=1;i<px.length;i++){const k=px[i],key=(prefix<<8)|k;
+        if(stamp[key]===gen){prefix=code[key];continue}
+        emit(prefix);
+        if(next===4096){emit(clear);gen++;codeSize=9;next=258}
+        else{if(next>=(1<<codeSize))codeSize++;stamp[key]=gen;code[key]=next++}
+        prefix=k}
+      emit(prefix);emit(eoi);if(bits>0)blk[bl++]=cur&255;if(bl){grow(bl+1);buf[len++]=bl;buf.set(blk.subarray(0,bl),len);len+=bl}put(0);
+    },
+    hold(extra){if(lastDelay<0)return;const d=(buf[lastDelay]|(buf[lastDelay+1]<<8))+extra;buf[lastDelay]=d&255;buf[lastDelay+1]=(d>>8)&255},
+    done(){put(0x3B);return buf.slice(0,len)}
+  };
 }
-async function makeGif(look,spin){
-  const g=games.find(x=>x.id===curId),full=info(g),moves=decMoves(g.v,g.m),n=moves.length;
-  const W=360,H=W+Math.round(W*.3),c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d",{willReadFrequently:true});
-  const frames=[],delays=[];const yield_=()=>new Promise(r=>setTimeout(r,0));
-  const cube=kindOf(g.v)==="C3"&&look==="cube";
-  if(cube&&spin==="spinfull"){const FR=48;for(let k=0;k<FR;k++){drawFrame(ctx,W,g,full.st,full,IMGC,{},look,-.6+k/FR*Math.PI*2,resultCaption(g,full));frames.push(quantize(ctx.getImageData(0,0,W,H).data));delays.push(18);if(k%6===0)await yield_()}}
-  else{
-    const maxF=60,step=Math.max(1,Math.ceil(n/maxF)),ks=[];for(let k=0;k<n;k+=step)ks.push(k);ks.push(n);
-    const delay=Math.max(12,Math.min(60,Math.floor(800/ks.length)));
-    for(let j=0;j<ks.length;j++){const k=ks[j],f=info(g,k);const yaw=cube&&spin==="spin"?-.6+j/ks.length*Math.PI*2:-.6;
-      drawFrame(ctx,W,g,f.st,f,IMGC,{},look,yaw,k===n?resultCaption(g,full):`Move ${k} of ${n}`);frames.push(quantize(ctx.getImageData(0,0,W,H).data));delays.push(j===ks.length-1?200:delay);if(j%5===0)await yield_()}
+async function makeGif(look,spin,onProgress){
+  await ensureFonts();
+  const g=games.find(x=>x.id===curId),full=info(g),moves=decMoves(g.v,g.m),n=moves.length,kind=kindOf(g.v);
+  const imgs=await avatarImages(coPlayersAll(g));
+  const cube=kind==="C3"&&look==="cube",big=/^u3/.test(g.v);
+  const W=big?760:cube?600:560,H=Math.round(W*1.34);
+  const c=document.createElement("canvas");c.width=W;c.height=H;const ctx=c.getContext("2d",{willReadFrequently:true});
+  const gw=gifWriter(W,H);let prev=null;const yield_=()=>new Promise(r=>setTimeout(r,0));
+  async function addFrame(delay){
+    const data=ctx.getImageData(0,0,W,H).data,cur=new Uint32Array(data.buffer);
+    let x0=0,y0=0,x1=W-1,y1=H-1;
+    if(prev){x0=W;y0=H;x1=-1;y1=-1;
+      for(let yy=0;yy<H;yy++){const o=yy*W;let row=false;for(let xx=0;xx<W;xx++)if(cur[o+xx]!==prev[o+xx]){row=true;if(xx<x0)x0=xx;break}
+        if(!row)continue;if(yy<y0)y0=yy;y1=yy;for(let xx=W-1;xx>=0;xx--)if(cur[o+xx]!==prev[o+xx]){if(xx>x1)x1=xx;break}}
+      if(x1<0){gw.hold(delay);return}}
+    const fw=x1-x0+1,fh=y1-y0+1,px=new Uint8Array(fw*fh);
+    for(let yy=0;yy<fh;yy++){let si=((y0+yy)*W+x0)*4,di=yy*fw,pi=(y0+yy)*W+x0;for(let xx=0;xx<fw;xx++,si+=4,pi++)px[di+xx]=prev&&cur[pi]===prev[pi]?255:palIndex(data[si],data[si+1],data[si+2])}
+    gw.frame(px,x0,y0,fw,fh,delay);prev=new Uint32Array(cur);
   }
-  return new Blob([gifEncode(W,H,frames,delays)],{type:"image/gif"});
+  const frameOf=(st,f,anim,yaw,caption,ring)=>drawFrame(ctx,W,g,st,f,IMGC,imgs,{look,yaw,anim,caption,ring});
+  const plan=[];
+  if(cube&&spin==="spinfull"){const FR=120;for(let k=0;k<FR;k++)plan.push({k:n,t:1,yaw:-.6+k/FR*Math.PI*2,delay:5,final:true})}
+  else{
+    const BUDGET=190;plan.push({k:0,t:1,delay:60});
+    if(n<=BUDGET){const S=Math.max(1,Math.min(6,Math.floor(BUDGET/Math.max(1,n))));for(let k=1;k<=n;k++)for(let j=1;j<=S;j++)plan.push({k,t:j/S,delay:4})}
+    else{const step=Math.ceil(n/BUDGET);for(let k=step;k<n;k+=step)plan.push({k,t:1,delay:4});plan.push({k:n,t:1,delay:4})}
+    plan[plan.length-1].final=true;
+    if(cube&&spin==="spin")plan.forEach((p,i)=>p.yaw=-.6+i/plan.length*Math.PI*2);
+  }
+  let lastK=-1,f=null;
+  for(let i=0;i<plan.length;i++){const p=plan[i];
+    if(p.k!==lastK){f=info(g,p.k);lastK=p.k}
+    const anim=p.k>0&&p.t<1?{i:kind==="INF"?moves[p.k-1].join(","):moves[p.k-1],t:p.t}:null;
+    const caption=p.final?resultCaption(g,full):"Replay";
+    frameOf(f.st,f,anim,p.yaw==null?-.6:p.yaw,caption,p.final?ringFor(full):[]);
+    await addFrame(p.delay);
+    if(p.final&&!(cube&&spin==="spinfull"))gw.hold(250);
+    if(i%4===0){onProgress&&onProgress(i/plan.length);await yield_()}
+  }
+  return new Blob([gw.done()],{type:"image/gif"});
 }
+
 async function shareFile(){
   if(!preview)return;const file=new File([preview.blob],preview.name,{type:preview.blob.type});
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:preview.name});return}}catch(e){if(e&&e.name==="AbortError")return}
@@ -1386,8 +1458,8 @@ app.addEventListener("submit",async e=>{
   else if(id==="saveform"){
     const fm=e.target,what=(e.submitter&&e.submitter.value)||"png",look=fm.look?fm.look.value:"layers",spin=fm.spin?fm.spin.value:"spin";
     lsSet("u2-look",look);lsSet("u2-spin",spin);
-    toast(what==="gif"?"Making your GIF…":"Making your picture…");
-    try{const blob=what==="gif"?await makeGif(look,spin):await makePicture(look);if(preview)URL.revokeObjectURL(preview.url);
+    toast(what==="gif"?"Making your GIF…":"Making your picture…");clearTimeout(toast.t);
+    try{const blob=what==="gif"?await makeGif(look,spin,p=>{toastEl.textContent=`Making your GIF… ${Math.round(p*100)}%`;toastEl.hidden=false;clearTimeout(toast.t)}):await makePicture(look);if(preview)URL.revokeObjectURL(preview.url);
       const g=games.find(x=>x.id===curId);preview={blob,url:URL.createObjectURL(blob),kind:what,name:`${variantName(g.v).replace(/[^A-Za-z0-9]+/g,"-")}.${what}`};saveOpen=false;toastEl.hidden=true;render()}
     catch(err){toast("Couldn't make that file.")}
   }
